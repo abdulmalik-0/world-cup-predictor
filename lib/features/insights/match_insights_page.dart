@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/core/utils/prediction_window.dart';
+import 'package:world_cup_predictor/core/widgets/team_badge.dart';
 import 'package:world_cup_predictor/models/match.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 import 'package:world_cup_predictor/models/prediction_history.dart';
@@ -138,11 +139,14 @@ class _MatchInsightsCardState extends ConsumerState<_MatchInsightsCard> {
       child: Column(
         children: [
           ListTile(
-            title: Text('${match.homeTeam} vs ${match.awayTeam}'),
-            subtitle: Text(
-              match.isFinished && match.homeScore != null
-                  ? 'النتيجة: ${match.homeScore}-${match.awayScore}'
-                  : 'التوقعات مغلقة — بانتظار المباراة',
+            title: MatchTeamsHeader(match: match),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                match.isFinished && match.homeScore != null
+                    ? 'النتيجة: ${match.homeScore}-${match.awayScore}'
+                    : 'التوقعات مغلقة — بانتظار المباراة',
+              ),
             ),
             trailing: match.isArabTeamMatch
                 ? const Chip(

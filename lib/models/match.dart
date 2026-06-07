@@ -5,6 +5,8 @@ class Match {
     required this.id,
     required this.homeTeam,
     required this.awayTeam,
+    this.homeTeamEn,
+    this.awayTeamEn,
     required this.homeTeamCode,
     required this.awayTeamCode,
     required this.kickoffAt,
@@ -17,6 +19,8 @@ class Match {
   final String id;
   final String homeTeam;
   final String awayTeam;
+  final String? homeTeamEn;
+  final String? awayTeamEn;
   final String homeTeamCode;
   final String awayTeamCode;
   final DateTime kickoffAt;
@@ -32,6 +36,8 @@ class Match {
       id: json['id'] as String,
       homeTeam: json['home_team'] as String,
       awayTeam: json['away_team'] as String,
+      homeTeamEn: json['home_team_en'] as String?,
+      awayTeamEn: json['away_team_en'] as String?,
       homeTeamCode: json['home_team_code'] as String,
       awayTeamCode: json['away_team_code'] as String,
       kickoffAt: DateTime.parse(json['kickoff_at'] as String).toLocal(),

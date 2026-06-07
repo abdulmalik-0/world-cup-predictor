@@ -1,4 +1,8 @@
 cd "c:\Users\atamimi\Desktop\World Cup Predictor"
 $env:Path = "$env:Path;$env:USERPROFILE\flutter\bin"
+
+# أول مرة فقط: انسخ env.example.json إلى env.json وضع مفاتيح Supabase
+# Copy-Item env.example.json env.json
+
 flutter pub get
-flutter run -d chrome --web-port=8080
+flutter run -d chrome --web-port=8080 --dart-define-from-file=env.json

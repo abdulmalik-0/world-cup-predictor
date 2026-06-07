@@ -44,7 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (loc == '/login') {
-        if (profileAsync.isLoading) return '/auth/callback';
+        if (profileAsync.isLoading) return null;
         return auth.profileNeedsSetup(profileAsync.valueOrNull)
             ? '/profile-setup'
             : '/dashboard';

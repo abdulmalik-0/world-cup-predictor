@@ -12,69 +12,80 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  final _nameController = TextEditingController();
+  final _departmentController = TextEditingController();
   final _emailController = TextEditingController();
-  final _otpController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _loading = false;
-  bool _otpSent = false;
+  bool _isRegister = true;
+  bool _obscurePassword = true;
   String? _error;
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _departmentController.dispose();
     _emailController.dispose();
-    _otpController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  String get _email => _emailController.text.trim();
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+    final name = _nameController.text.trim();
+    final department = _departmentController.text.trim();
 
-  Future<void> _sendOtp() async {
-    if (_email.isEmpty || !_email.contains('@')) {
+    if (email.isEmpty || !email.contains('@')) {
       setState(() => _error = 'يرجى إدخال بريد إلكتروني صالح');
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      await ref.read(authServiceProvider).sendEmailOtp(_email);
-      setState(() {
-        _otpSent = true;
-        _otpController.clear();
-      });
-    } on AuthException catch (e) {
-      setState(() => _error = authErrorMessage(e));
-    } catch (e) {
-      setState(() => _error = 'تعذّر إرسال الرمز. تحقق من إعدادات Supabase.');
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _verifyOtp() async {
-    final code = _otpController.text.trim();
-    if (code.length < 6) {
-      setState(() => _error = 'أدخل الرمز المكوّن من 6 أرقام');
+    if (password.length < 6) {
+      setState(() => _error = 'كلمة المرور 6 أحرف على الأقل');
       return;
     }
 
+    if (_isRegister) {
+      if (name.length < 2) {
+        setState(() => _error = 'يرجى إدخال الاسم الكامل');
+        return;
+      }
+      if (department.isEmpty) {
+        setState(() => _error = 'يرجى إدخال القسم');
+        return;
+      }
+      if (password != confirm) {
+        setState(() => _error = 'كلمتا المرور غير متطابقتين');
+        return;
+      }
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      await ref.read(authServiceProvider).verifyEmailOtp(
-            email: _email,
-            token: code,
-          );
+      final auth = ref.read(authServiceProvider);
+      if (_isRegister) {
+        await auth.signUpWithPassword(
+          email: email,
+          password: password,
+          fullName: name,
+          department: department,
+        );
+      } else {
+        await auth.signInWithPassword(email: email, password: password);
+      }
       ref.invalidate(currentProfileProvider);
     } on AuthException catch (e) {
       setState(() => _error = authErrorMessage(e));
     } catch (e) {
-      setState(() => _error = 'تعذّر التحقق من الرمز. حاول مرة أخرى.');
+      setState(() => _error = 'تعذّر ${_isRegister ? 'إنشاء الحساب' : 'تسجيل الدخول'}.');
     } finally {
       setState(() => _loading = false);
     }
@@ -109,62 +120,79 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _otpSent
-                          ? 'أدخل الرمز المرسل إلى بريدك'
-                          : 'سجّل دخولك بأي بريد (شخصي أو عمل)',
+                      _isRegister
+                          ? 'أنشئ حسابك من البداية'
+                          : 'سجّل دخولك بالإيميل وكلمة المرور',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                     const SizedBox(height: 32),
-                    if (!_otpSent) ...[
+                    if (_isRegister) ...[
                       TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.done,
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
-                          labelText: 'البريد الإلكتروني',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                        onSubmitted: (_) => _sendOtp(),
-                      ),
-                    ] else ...[
-                      Card(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.mark_email_read_outlined),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'تم إرسال رمز إلى $_email',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
-                          ),
+                          labelText: 'الاسم الكامل',
+                          hintText: 'مثال: أحمد محمد',
+                          prefixIcon: Icon(Icons.badge_outlined),
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                        controller: _otpController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        maxLength: 6,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          letterSpacing: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        controller: _departmentController,
+                        textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
-                          labelText: 'رمز الدخول (6 أرقام)',
-                          counterText: '',
-                          hintText: '000000',
+                          labelText: 'القسم',
+                          hintText: 'مثال: تقنية المعلومات',
+                          prefixIcon: Icon(Icons.business_outlined),
                         ),
-                        onSubmitted: (_) => _verifyOtp(),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'البريد الإلكتروني',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction:
+                          _isRegister ? TextInputAction.next : TextInputAction.done,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        hintText: '6 أحرف على الأقل',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () =>
+                              setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                      onSubmitted: (_) => _isRegister ? null : _submit(),
+                    ),
+                    if (_isRegister) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'تأكيد كلمة المرور',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        onSubmitted: (_) => _submit(),
                       ),
                     ],
                     if (_error != null) ...[
@@ -179,38 +207,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _loading
-                          ? null
-                          : (_otpSent ? _verifyOtp : _sendOtp),
+                      onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(_otpSent ? 'تسجيل الدخول' : 'إرسال رمز الدخول'),
+                          : Text(_isRegister ? 'إنشاء حساب وابدأ' : 'تسجيل الدخول'),
                     ),
-                    if (_otpSent) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                            onPressed: _loading
-                                ? null
-                                : () => setState(() {
-                                      _otpSent = false;
-                                      _error = null;
-                                    }),
-                            child: const Text('تغيير الإيميل'),
-                          ),
-                          TextButton(
-                            onPressed: _loading ? null : _sendOtp,
-                            child: const Text('إرسال رمز جديد'),
-                          ),
-                        ],
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _loading
+                          ? null
+                          : () => setState(() {
+                                _isRegister = !_isRegister;
+                                _error = null;
+                                _confirmPasswordController.clear();
+                              }),
+                      child: Text(
+                        _isRegister
+                            ? 'عندك حساب؟ سجّل الدخول'
+                            : 'أول مرة؟ أنشئ حساب',
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),

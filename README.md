@@ -17,18 +17,20 @@
    - `supabase/migrations/001_initial_schema.sql`
 3. (اختياري) نفّذ `supabase/seed.sql` لإضافة مباريات تجريبية.
 4. من **Authentication → Providers**:
-   - فعّل **Email** (Magic Link / OTP).
-   - في **URL Configuration**، أضف عنوان تطبيقك (مثل `http://localhost:8080`).
+   - فعّل **Email**
+   - فعّل **Email + Password**
+   - **Confirm email = OFF** (دخول مباشر بدون رسالة تحقق)
 5. انسخ **Project URL** و **anon public key**.
 
 ### 2. Flutter
 
 ```bash
+# انسخ env.example.json إلى env.json وضع مفاتيح Supabase
+cp env.example.json env.json
+
 cd "World Cup Predictor"
 flutter pub get
-flutter run -d chrome \
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
+flutter run -d chrome --web-port=8080 --dart-define-from-file=env.json
 ```
 
 للبناء للإنتاج:

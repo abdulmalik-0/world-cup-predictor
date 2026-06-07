@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:world_cup_predictor/core/config/auth_redirect.dart';
 import 'package:world_cup_predictor/models/profile.dart';
 
 class AuthService {
@@ -11,32 +9,34 @@ class AuthService {
   User? get currentUser => _client.auth.currentUser;
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  /// Sends a 6-digit OTP to the email. No redirect URL — works without Supabase Redirect URLs setup.
-  Future<void> sendEmailOtp(String email) async {
-    await _client.auth.signInWithOtp(
-      email: email.trim(),
-      shouldCreateUser: true,
-    );
-  }
-
-  /// Optional: magic link with redirect (requires Redirect URLs in Supabase Dashboard).
-  Future<void> sendMagicLink(String email) async {
-    await _client.auth.signInWithOtp(
-      email: email.trim(),
-      shouldCreateUser: true,
-      emailRedirectTo: kIsWeb ? authRedirectUrl : authRedirectUrl,
-    );
-  }
-
-  Future<void> verifyEmailOtp({
+  Future<void> signInWithPassword({
     required String email,
-    required String token,
+    required String password,
   }) async {
-    await _client.auth.verifyOTP(
-      type: OtpType.email,
+    await _client.auth.signInWithPassword(
       email: email.trim(),
-      token: token.trim(),
+      password: password,
     );
+  }
+
+  Future<void> signUpWithPassword({
+    required String email,
+    required String password,
+    required String fullName,
+    required String department,
+  }) async {
+    final response = await _client.auth.signUp(
+      email: email.trim(),
+      password: password,
+      data: {
+        'full_name': fullName.trim(),
+        'department': department.trim(),
+      },
+    );
+
+    if (response.user != null) {
+      await upsertProfile(fullName: fullName, department: department);
+    }
   }
 
   bool profileNeedsSetup(Profile? profile) {
@@ -86,26 +86,18 @@ class AuthService {
 String authErrorMessage(AuthException e) {
   final message = e.message.toLowerCase();
 
-  if (e.statusCode == '429' || message.contains('rate') || message.contains('too many')) {
-    return 'تم إرسال طلبات كثيرة. انتظر 5–10 دقائق ثم حاول مرة أخرى.';
+  if (message.contains('invalid login credentials') ||
+      message.contains('invalid credentials')) {
+    return 'البريد أو كلمة المرور غير صحيحة.';
   }
 
-  if (message.contains('redirect') || message.contains('url')) {
-    return 'رابط التوجيه غير مسموح في Supabase.\n'
-        'أضف http://localhost:8080 في Redirect URLs.';
+  if (message.contains('user already registered') ||
+      message.contains('already been registered')) {
+    return 'هذا البريد مسجّل مسبقاً. سجّل الدخول بدلاً من إنشاء حساب.';
   }
 
-  if (message.contains('invalid') && message.contains('api')) {
-    return 'مفتاح Supabase غير صحيح.\n'
-        'استخدم anon public key (JWT) من Settings → API.';
-  }
-
-  if (message.contains('otp') && message.contains('expired')) {
-    return 'انتهت صلاحية الرمز. أرسل رمزاً جديداً.';
-  }
-
-  if (message.contains('otp') || message.contains('token')) {
-    return 'الرمز غير صحيح. تحقق من الأرقام الستة في بريدك.';
+  if (message.contains('password') && message.contains('weak')) {
+    return 'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.';
   }
 
   if (message.contains('email') && message.contains('invalid')) {

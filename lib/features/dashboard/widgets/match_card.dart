@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:world_cup_predictor/core/constants/teams.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/core/utils/prediction_window.dart';
+import 'package:world_cup_predictor/core/widgets/team_badge.dart';
 import 'package:world_cup_predictor/models/match.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 
@@ -140,12 +142,19 @@ class _MatchCardState extends State<MatchCard> {
             ),
             const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _TeamColumn(name: match.homeTeam, code: match.homeTeamCode),
+                  child: TeamBadge(
+                    team: resolveTeam(
+                      code: match.homeTeamCode,
+                      nameAr: match.homeTeam,
+                      nameEn: match.homeTeamEn,
+                    ),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     'VS',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -155,9 +164,12 @@ class _MatchCardState extends State<MatchCard> {
                   ),
                 ),
                 Expanded(
-                  child: _TeamColumn(
-                    name: match.awayTeam,
-                    code: match.awayTeamCode,
+                  child: TeamBadge(
+                    team: resolveTeam(
+                      code: match.awayTeamCode,
+                      nameAr: match.awayTeam,
+                      nameEn: match.awayTeamEn,
+                    ),
                     alignEnd: true,
                   ),
                 ),
@@ -238,38 +250,5 @@ class _MatchCardState extends State<MatchCard> {
 
   String _formatKickoff(DateTime dt) {
     return '${dt.day}/${dt.month}/${dt.year} — ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-}
-
-class _TeamColumn extends StatelessWidget {
-  const _TeamColumn({
-    required this.name,
-    required this.code,
-    this.alignEnd = false,
-  });
-
-  final String name;
-  final String code;
-  final bool alignEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(
-          name,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-        ),
-        Text(
-          code,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-      ],
-    );
   }
 }
