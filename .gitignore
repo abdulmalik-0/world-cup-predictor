@@ -41,6 +41,3 @@ app.*.map.json
 .env
 env.json
 lib/core/config/supabase_config.dart
-
-# User-provided images (third-party assets — kept local, not redistributed)
-assets/images/*.png
