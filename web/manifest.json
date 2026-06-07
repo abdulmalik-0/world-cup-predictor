@@ -1,0 +1,11 @@
+{
+    "name": "تحدي مونديال الشركة",
+    "short_name": "مونديال الشركة",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0D1B2A",
+    "theme_color": "#006847",
+    "description": "Company World Cup Predictor",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false
+}

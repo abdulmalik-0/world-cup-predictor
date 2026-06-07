@@ -1,0 +1,4 @@
+cd "c:\Users\atamimi\Desktop\World Cup Predictor"
+$env:Path = "$env:Path;$env:USERPROFILE\flutter\bin"
+flutter pub get
+flutter run -d chrome --web-port=8080
