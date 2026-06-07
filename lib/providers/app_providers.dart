@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
 import 'package:world_cup_predictor/models/match.dart';
+import 'package:world_cup_predictor/models/my_stats.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 import 'package:world_cup_predictor/models/profile.dart';
 import 'package:world_cup_predictor/services/auth_service.dart';
@@ -49,4 +50,20 @@ final leaderboardProvider = FutureProvider<List<LeaderboardEntry>>((ref) async {
 
 final finishedMatchesProvider = FutureProvider<List<Match>>((ref) async {
   return ref.watch(matchServiceProvider).fetchFinishedMatches();
+});
+
+final isAdminProvider = Provider<bool>((ref) {
+  return ref.watch(currentProfileProvider).valueOrNull?.isAdmin ?? false;
+});
+
+final allMatchesProvider = FutureProvider<List<Match>>((ref) async {
+  return ref.watch(matchServiceProvider).fetchAllMatches();
+});
+
+final myStatsProvider = FutureProvider<MyStats>((ref) async {
+  final user = ref.watch(supabaseClientProvider).auth.currentUser;
+  if (user == null) return MyStats.empty();
+  final rows =
+      await ref.watch(matchServiceProvider).fetchMyPredictionsWithMatches(user.id);
+  return MyStats.fromRows(rows);
 });

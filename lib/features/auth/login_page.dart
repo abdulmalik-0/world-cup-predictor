@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:world_cup_predictor/core/i18n/app_strings.dart';
+import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 import 'package:world_cup_predictor/services/auth_service.dart';
 
@@ -39,27 +41,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final name = _nameController.text.trim();
     final department = _departmentController.text.trim();
 
+    final s = S.of(context);
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'يرجى إدخال بريد إلكتروني صالح');
+      setState(() => _error = s.errEmail);
       return;
     }
 
     if (password.length < 6) {
-      setState(() => _error = 'كلمة المرور 6 أحرف على الأقل');
+      setState(() => _error = s.errPassword);
       return;
     }
 
     if (_isRegister) {
       if (name.length < 2) {
-        setState(() => _error = 'يرجى إدخال الاسم الكامل');
+        setState(() => _error = s.errName);
         return;
       }
       if (department.isEmpty) {
-        setState(() => _error = 'يرجى إدخال القسم');
+        setState(() => _error = s.errDept);
         return;
       }
       if (password != confirm) {
-        setState(() => _error = 'كلمتا المرور غير متطابقتين');
+        setState(() => _error = s.errPasswordMatch);
         return;
       }
     }
@@ -85,7 +88,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } on AuthException catch (e) {
       setState(() => _error = authErrorMessage(e));
     } catch (e) {
-      setState(() => _error = 'تعذّر ${_isRegister ? 'إنشاء الحساب' : 'تسجيل الدخول'}.');
+      setState(() => _error = _isRegister ? s.errRegister : s.errSignIn);
     } finally {
       setState(() => _loading = false);
     }
@@ -93,9 +96,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: s.ar ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            TextButton.icon(
+              onPressed: () => ref.read(localeProvider.notifier).toggle(),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              icon: const Icon(Icons.translate, size: 18),
+              label: Text(s.switchLanguageLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -105,24 +122,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.sports_soccer,
-                      size: 72,
-                      color: Theme.of(context).colorScheme.primary,
+                    Center(
+                      child: Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.heroGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.5),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.emoji_events,
+                            size: 52, color: AppTheme.accentGold),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     Text(
-                      'تحدي مونديال الشركة',
+                      s.appName,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isRegister
-                          ? 'أنشئ حسابك من البداية'
-                          : 'سجّل دخولك بالإيميل وكلمة المرور',
+                      _isRegister ? s.registerSubtitle : s.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -133,20 +162,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextField(
                         controller: _nameController,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'الاسم الكامل',
-                          hintText: 'مثال: أحمد محمد',
-                          prefixIcon: Icon(Icons.badge_outlined),
+                        decoration: InputDecoration(
+                          labelText: s.fullName,
+                          hintText: s.fullNameHint,
+                          prefixIcon: const Icon(Icons.badge_outlined),
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
                         controller: _departmentController,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'القسم',
-                          hintText: 'مثال: تقنية المعلومات',
-                          prefixIcon: Icon(Icons.business_outlined),
+                        decoration: InputDecoration(
+                          labelText: s.department,
+                          hintText: s.departmentHint,
+                          prefixIcon: const Icon(Icons.business_outlined),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -155,9 +184,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'البريد الإلكتروني',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: s.email,
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -167,8 +196,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       textInputAction:
                           _isRegister ? TextInputAction.next : TextInputAction.done,
                       decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
-                        hintText: '6 أحرف على الأقل',
+                        labelText: s.password,
+                        hintText: s.passwordHint,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -188,9 +217,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         controller: _confirmPasswordController,
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          labelText: 'تأكيد كلمة المرور',
-                          prefixIcon: Icon(Icons.lock_outline),
+                        decoration: InputDecoration(
+                          labelText: s.confirmPassword,
+                          prefixIcon: const Icon(Icons.lock_outline),
                         ),
                         onSubmitted: (_) => _submit(),
                       ),
@@ -214,7 +243,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(_isRegister ? 'إنشاء حساب وابدأ' : 'تسجيل الدخول'),
+                          : Text(_isRegister ? s.createAndStart : s.signIn),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
@@ -226,9 +255,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 _confirmPasswordController.clear();
                               }),
                       child: Text(
-                        _isRegister
-                            ? 'عندك حساب؟ سجّل الدخول'
-                            : 'أول مرة؟ أنشئ حساب',
+                        _isRegister ? s.haveAccount : s.firstTime,
                       ),
                     ),
                   ],

@@ -3,6 +3,65 @@ import 'package:flutter/material.dart';
 import 'package:world_cup_predictor/core/constants/teams.dart';
 import 'package:world_cup_predictor/models/match.dart';
 
+/// A country flag rendered as a rounded card with a soft border + shadow.
+class FlagAvatar extends StatelessWidget {
+  const FlagAvatar({super.key, required this.team, this.size = 44});
+
+  final TeamInfo team;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = size * 1.4;
+    final border = Theme.of(context).colorScheme.outline.withValues(alpha: 0.25);
+
+    final child = team.flagUrl.isEmpty
+        ? Container(
+            width: width,
+            height: size,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Icon(Icons.sports_soccer, size: size * 0.55),
+          )
+        : CachedNetworkImage(
+            imageUrl: team.flagUrl,
+            width: width,
+            height: size,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(
+              width: width,
+              height: size,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+            errorWidget: (_, __, ___) => Container(
+              width: width,
+              height: size,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.flag_outlined, size: size * 0.5),
+            ),
+          );
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Flag + names. [compact] stacks them vertically and centered (match cards);
+/// otherwise they sit in a row.
 class TeamBadge extends StatelessWidget {
   const TeamBadge({
     super.key,
@@ -17,81 +76,28 @@ class TeamBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final crossAlign =
-        alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
     if (compact) {
       return Column(
-        crossAxisAlignment: crossAlign,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _FlagImage(team: team, size: 28),
-          const SizedBox(height: 6),
-          _TeamNames(team: team, alignEnd: alignEnd, compact: true),
+          FlagAvatar(team: team, size: 46),
+          const SizedBox(height: 10),
+          _TeamNames(team: team, center: true, compact: true),
         ],
       );
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (alignEnd) Expanded(child: _TeamNames(team: team, alignEnd: true)),
-        if (alignEnd) const SizedBox(width: 8),
-        _FlagImage(team: team, size: 36),
-        if (!alignEnd) const SizedBox(width: 8),
-        if (!alignEnd) Expanded(child: _TeamNames(team: team, alignEnd: false)),
-      ],
+    final names = Expanded(
+      child: _TeamNames(team: team, center: false, compact: false, alignEnd: alignEnd),
     );
-  }
-}
-
-class _FlagImage extends StatelessWidget {
-  const _FlagImage({required this.team, required this.size});
-
-  final TeamInfo team;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    if (team.flagUrl.isEmpty) {
-      return Container(
-        width: size * 1.35,
-        height: size,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Icon(Icons.sports_soccer, size: size * 0.55),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: CachedNetworkImage(
-        imageUrl: team.flagUrl,
-        width: size * 1.35,
-        height: size,
-        fit: BoxFit.cover,
-        placeholder: (_, __) => SizedBox(
-          width: size * 1.35,
-          height: size,
-          child: const Center(
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        ),
-        errorWidget: (_, __, ___) => Container(
-          width: size * 1.35,
-          height: size,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Icon(Icons.flag_outlined, size: size * 0.5),
-        ),
-      ),
+    return Row(
+      children: [
+        if (alignEnd) names,
+        if (alignEnd) const SizedBox(width: 8),
+        FlagAvatar(team: team, size: 34),
+        if (!alignEnd) const SizedBox(width: 8),
+        if (!alignEnd) names,
+      ],
     );
   }
 }
@@ -99,46 +105,56 @@ class _FlagImage extends StatelessWidget {
 class _TeamNames extends StatelessWidget {
   const _TeamNames({
     required this.team,
-    required this.alignEnd,
+    required this.center,
     required this.compact,
+    this.alignEnd = false,
   });
 
   final TeamInfo team;
-  final bool alignEnd;
+  final bool center;
   final bool compact;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    final textAlign = alignEnd ? TextAlign.end : TextAlign.start;
+    final cross = center
+        ? CrossAxisAlignment.center
+        : (alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start);
+    final textAlign = center
+        ? TextAlign.center
+        : (alignEnd ? TextAlign.end : TextAlign.start);
 
     return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: cross,
+      mainAxisSize: MainAxisSize.min,
       children: [
-          Text(
-            team.nameAr,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: compact ? 14 : null,
-                ),
-            textAlign: textAlign,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            team.nameEn,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: compact ? 11 : 12,
-                ),
-            textAlign: textAlign,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      );
+        Text(
+          team.nameAr,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: compact ? 15 : null,
+                height: 1.1,
+              ),
+          textAlign: textAlign,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          team.nameEn,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: compact ? 11 : 12,
+              ),
+          textAlign: textAlign,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
   }
 }
+
 class MatchTeamsHeader extends StatelessWidget {
   const MatchTeamsHeader({super.key, required this.match});
 
@@ -169,7 +185,7 @@ class MatchTeamsHeader extends StatelessWidget {
                 ),
           ),
         ),
-        Expanded(child: TeamBadge(team: away, alignEnd: true, compact: true)),
+        Expanded(child: TeamBadge(team: away, compact: true)),
       ],
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:world_cup_predictor/core/constants/app_constants.dart';
+import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
 class AppShell extends ConsumerWidget {
@@ -12,52 +12,63 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
+    final isAdmin = ref.watch(isAdminProvider);
+    final s = S.of(context);
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(appNameAr),
-          actions: [
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(s.appName),
+        actions: [
+          _LanguageButton(label: s.switchLanguageLabel),
+          if (isAdmin)
             IconButton(
-              tooltip: 'تسجيل الخروج',
-              onPressed: () async {
-                await ref.read(authServiceProvider).signOut();
-                if (context.mounted) context.go('/login');
-              },
-              icon: const Icon(Icons.logout),
+              tooltip: s.adminPanel,
+              onPressed: () => context.go('/admin'),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
             ),
-          ],
+          IconButton(
+            tooltip: s.signOut,
+            onPressed: () async {
+              await ref.read(authServiceProvider).signOut();
+              if (context.mounted) context.go('/login');
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: child,
         ),
-        body: child,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _indexForLocation(location),
-          onDestinationSelected: (i) => context.go(_locationForIndex(i)),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.sports_soccer_outlined),
-              selectedIcon: Icon(Icons.sports_soccer),
-              label: 'المباريات',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.leaderboard_outlined),
-              selectedIcon: Icon(Icons.leaderboard),
-              label: 'الترتيب',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.visibility_outlined),
-              selectedIcon: Icon(Icons.visibility),
-              label: 'الطقطقة',
-            ),
-          ],
-        ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _indexForLocation(location),
+        onDestinationSelected: (i) => context.go(_locationForIndex(i)),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.sports_soccer_outlined),
+            selectedIcon: const Icon(Icons.sports_soccer),
+            label: s.matches,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.leaderboard_outlined),
+            selectedIcon: const Icon(Icons.leaderboard),
+            label: s.standings,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: s.myStats,
+          ),
+        ],
       ),
     );
   }
 
   int _indexForLocation(String location) {
     if (location.startsWith('/leaderboard')) return 1;
-    if (location.startsWith('/insights')) return 2;
+    if (location.startsWith('/stats')) return 2;
     return 0;
   }
 
@@ -66,9 +77,25 @@ class AppShell extends ConsumerWidget {
       case 1:
         return '/leaderboard';
       case 2:
-        return '/insights';
+        return '/stats';
       default:
         return '/dashboard';
     }
+  }
+}
+
+class _LanguageButton extends ConsumerWidget {
+  const _LanguageButton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TextButton.icon(
+      onPressed: () => ref.read(localeProvider.notifier).toggle(),
+      style: TextButton.styleFrom(foregroundColor: Colors.white),
+      icon: const Icon(Icons.translate, size: 18),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+    );
   }
 }

@@ -4,6 +4,7 @@ class Profile {
     required this.fullName,
     required this.department,
     this.avatarUrl,
+    this.isAdmin = false,
     required this.createdAt,
   });
 
@@ -11,6 +12,7 @@ class Profile {
   final String fullName;
   final String department;
   final String? avatarUrl;
+  final bool isAdmin;
   final DateTime createdAt;
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class Profile {
       fullName: json['full_name'] as String,
       department: json['department'] as String,
       avatarUrl: json['avatar_url'] as String?,
+      isAdmin: json['is_admin'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

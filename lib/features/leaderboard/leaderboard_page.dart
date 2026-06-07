@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
 class LeaderboardPage extends ConsumerStatefulWidget {
@@ -46,41 +47,174 @@ class _LeaderboardPageState extends ConsumerState<LeaderboardPage> {
         data: (entries) {
           if (entries.isEmpty) {
             return ListView(
-              children: const [
-                SizedBox(height: 120),
-                Text('لا يوجد مشاركون بعد', textAlign: TextAlign.center),
+              children: [
+                const SizedBox(height: 140),
+                const Icon(Icons.emoji_events_outlined,
+                    size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(S.of(context).noParticipants,
+                    textAlign: TextAlign.center),
               ],
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: entries.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.bolt, color: Theme.of(context).colorScheme.secondary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'الترتيب اللحظي — يتحدّث تلقائياً',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                );
-              }
+          final podium = entries.take(3).toList();
+          final rest = entries.length > 3 ? entries.sublist(3) : <LeaderboardEntry>[];
 
-              final entry = entries[index - 1];
-              return _LeaderboardTile(rank: index, entry: entry);
-            },
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            children: [
+              const _LiveHeader(),
+              const SizedBox(height: 16),
+              if (podium.length == 3) _Podium(top: podium) else
+                ...podium.asMap().entries.map(
+                      (e) => _LeaderboardTile(rank: e.key + 1, entry: e.value),
+                    ),
+              if (rest.isNotEmpty) const SizedBox(height: 8),
+              ...rest.asMap().entries.map(
+                    (e) => _LeaderboardTile(rank: e.key + 4, entry: e.value),
+                  ),
+            ],
           );
         },
       ),
+    );
+  }
+}
+
+class _LiveHeader extends StatelessWidget {
+  const _LiveHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: const BoxDecoration(
+            color: AppTheme.pitchGreen,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          S.of(context).liveStandings,
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+  }
+}
+
+class _Podium extends StatelessWidget {
+  const _Podium({required this.top});
+
+  final List<LeaderboardEntry> top;
+
+  @override
+  Widget build(BuildContext context) {
+    // Visual order: 2nd, 1st, 3rd
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppTheme.accentGold.withValues(alpha: 0.12),
+            Colors.transparent,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(child: _PodiumSpot(rank: 2, entry: top[1], height: 96)),
+          Expanded(child: _PodiumSpot(rank: 1, entry: top[0], height: 124)),
+          Expanded(child: _PodiumSpot(rank: 3, entry: top[2], height: 76)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PodiumSpot extends StatelessWidget {
+  const _PodiumSpot({
+    required this.rank,
+    required this.entry,
+    required this.height,
+  });
+
+  final int rank;
+  final LeaderboardEntry entry;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _medalColor(rank) ?? AppTheme.primaryGreen;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (rank == 1)
+          const Icon(Icons.emoji_events, color: AppTheme.accentGold, size: 26),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6, top: 4),
+          child: CircleAvatar(
+            radius: rank == 1 ? 30 : 24,
+            backgroundColor: color,
+            child: Text(
+              _initials(entry.fullName),
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w900,
+                fontSize: rank == 1 ? 20 : 16,
+              ),
+            ),
+          ),
+        ),
+        Text(
+          entry.fullName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+        Text(
+          '${entry.totalPoints} ${S.of(context).pts}',
+          style: const TextStyle(
+              color: AppTheme.accentGold,
+              fontWeight: FontWeight.w800,
+              fontSize: 12),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: height,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [color.withValues(alpha: 0.85), color.withValues(alpha: 0.45)],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '$rank',
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -93,31 +227,26 @@ class _LeaderboardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final medalColor = switch (rank) {
-      1 => AppTheme.accentGold,
-      2 => Colors.grey.shade300,
-      3 => const Color(0xFFCD7F32),
-      _ => null,
-    };
-
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: medalColor ?? Theme.of(context).colorScheme.primaryContainer,
+          backgroundColor: _medalColor(rank) ??
+              Theme.of(context).colorScheme.primaryContainer,
           child: Text(
             '$rank',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: medalColor != null ? Colors.black : null,
+              color: _medalColor(rank) != null ? Colors.black : null,
             ),
           ),
         ),
         title: Text(
           entry.fullName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text('${entry.department} • ${entry.predictionsMade} توقع'),
+        subtitle: Text(
+            '${entry.department} • ${S.of(context).predictionsMadeCount(entry.predictionsMade)}'),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -125,14 +254,28 @@ class _LeaderboardTile extends StatelessWidget {
             Text(
               '${entry.totalPoints}',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                     color: AppTheme.accentGold,
                   ),
             ),
-            const Text('نقطة', style: TextStyle(fontSize: 11)),
+            Text(S.of(context).pts, style: const TextStyle(fontSize: 11)),
           ],
         ),
       ),
     );
   }
+}
+
+Color? _medalColor(int rank) => switch (rank) {
+      1 => AppTheme.accentGold,
+      2 => const Color(0xFFC0C7D1),
+      3 => const Color(0xFFCD7F32),
+      _ => null,
+    };
+
+String _initials(String name) {
+  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts.first.characters.first;
+  return parts.first.characters.first + parts.elementAt(1).characters.first;
 }

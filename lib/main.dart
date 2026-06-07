@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/app.dart';
 import 'package:world_cup_predictor/core/config/auth_redirect.dart';
@@ -7,6 +8,8 @@ import 'package:world_cup_predictor/core/config/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ar', null);
+  await initializeDateFormatting('en', null);
 
   if (!SupabaseConfig.isConfigured) {
     runApp(const _MissingConfigApp());
@@ -46,9 +49,9 @@ class _MissingConfigApp extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Column(
+                child: const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.settings_outlined, size: 64, color: Colors.orange),
                     SizedBox(height: 16),
                     Text(

@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/core/config/auth_redirect.dart';
 import 'package:world_cup_predictor/features/auth/auth_callback_page.dart';
+import 'package:world_cup_predictor/features/admin/admin_page.dart';
 import 'package:world_cup_predictor/features/auth/login_page.dart';
 import 'package:world_cup_predictor/features/auth/profile_setup_page.dart';
 import 'package:world_cup_predictor/features/dashboard/dashboard_page.dart';
-import 'package:world_cup_predictor/features/insights/match_insights_page.dart';
 import 'package:world_cup_predictor/features/leaderboard/leaderboard_page.dart';
 import 'package:world_cup_predictor/features/shell/app_shell.dart';
+import 'package:world_cup_predictor/features/stats/my_stats_page.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -76,6 +77,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile-setup',
         builder: (context, state) => const ProfileSetupPage(),
       ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminPage(),
+      ),
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
@@ -88,8 +93,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const LeaderboardPage(),
           ),
           GoRoute(
-            path: '/insights',
-            builder: (context, state) => const MatchInsightsPage(),
+            path: '/stats',
+            builder: (context, state) => const MyStatsPage(),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
 class ProfileSetupPage extends ConsumerStatefulWidget {
@@ -39,15 +40,16 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   }
 
   Future<void> _save() async {
+    final s = S.of(context);
     final name = _nameController.text.trim();
     final dept = _departmentController.text.trim();
 
     if (name.length < 2) {
-      setState(() => _error = 'يرجى إدخال الاسم الكامل');
+      setState(() => _error = s.errName);
       return;
     }
     if (dept.isEmpty) {
-      setState(() => _error = 'يرجى إدخال القسم');
+      setState(() => _error = s.errDept);
       return;
     }
 
@@ -64,7 +66,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
       ref.invalidate(currentProfileProvider);
       if (mounted) context.go('/dashboard');
     } catch (e) {
-      setState(() => _error = 'تعذّر حفظ الملف الشخصي. حاول مرة أخرى.');
+      setState(() => _error = S.of(context).errSaveProfile);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -73,13 +75,14 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     _prefillFromProfile();
+    final s = S.of(context);
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: s.ar ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: const Text('أكمل ملفك الشخصي'),
+          title: Text(s.completeProfile),
         ),
         body: SafeArea(
           child: Center(
@@ -91,7 +94,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'خطوة أخيرة قبل البدء!',
+                      s.lastStep,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
@@ -99,7 +102,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'هذه المعلومات تظهر في جدول الترتيب وتوقعات الزملاء.',
+                      s.profileHint,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -120,20 +123,20 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     TextField(
                       controller: _nameController,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'الاسم الكامل',
-                        hintText: 'مثال: أحمد محمد',
-                        prefixIcon: Icon(Icons.badge_outlined),
+                      decoration: InputDecoration(
+                        labelText: s.fullName,
+                        hintText: s.fullNameHint,
+                        prefixIcon: const Icon(Icons.badge_outlined),
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _departmentController,
                       textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'القسم',
-                        hintText: 'مثال: تقنية المعلومات',
-                        prefixIcon: Icon(Icons.business_outlined),
+                      decoration: InputDecoration(
+                        labelText: s.department,
+                        hintText: s.departmentHint,
+                        prefixIcon: const Icon(Icons.business_outlined),
                       ),
                       onSubmitted: (_) => _save(),
                     ),
@@ -154,7 +157,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('ابدأ التوقعات'),
+                          : Text(s.startPredicting),
                     ),
                   ],
                 ),

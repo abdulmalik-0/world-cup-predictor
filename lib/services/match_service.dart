@@ -135,6 +135,82 @@ class MatchService {
     return map;
   }
 
+  // ── Stats ──────────────────────────────────────────────────
+  /// My predictions joined with their match, for the personal stats page.
+  Future<List<Map<String, dynamic>>> fetchMyPredictionsWithMatches(
+    String userId,
+  ) async {
+    final rows = await _client
+        .from('predictions')
+        .select('*, matches(*)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: true);
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  // ── Admin: manage matches ──────────────────────────────────
+  Future<List<Match>> fetchAllMatches() async {
+    final rows = await _client
+        .from('matches')
+        .select()
+        .order('kickoff_at', ascending: true);
+    return (rows as List)
+        .map((e) => Match.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> createMatch({
+    required String homeTeam,
+    required String homeTeamCode,
+    required String awayTeam,
+    required String awayTeamCode,
+    required DateTime kickoffAt,
+    String? homeTeamEn,
+    String? awayTeamEn,
+    String? externalRef,
+  }) async {
+    await _client.from('matches').insert({
+      'home_team': homeTeam,
+      'away_team': awayTeam,
+      'home_team_code': homeTeamCode,
+      'away_team_code': awayTeamCode,
+      'home_team_en': homeTeamEn,
+      'away_team_en': awayTeamEn,
+      'kickoff_at': kickoffAt.toUtc().toIso8601String(),
+      'status': 'scheduled',
+      if (externalRef != null && externalRef.isNotEmpty)
+        'external_ref': externalRef,
+    });
+  }
+
+  /// Set the final result; the DB trigger awards points automatically.
+  Future<void> setMatchResult({
+    required String matchId,
+    required int homeScore,
+    required int awayScore,
+    bool finished = true,
+  }) async {
+    await _client.from('matches').update({
+      'home_score': homeScore,
+      'away_score': awayScore,
+      'status': finished ? 'finished' : 'live',
+    }).eq('id', matchId);
+  }
+
+  Future<void> rescheduleMatch({
+    required String matchId,
+    required DateTime kickoffAt,
+  }) async {
+    await _client
+        .from('matches')
+        .update({'kickoff_at': kickoffAt.toUtc().toIso8601String()})
+        .eq('id', matchId);
+  }
+
+  Future<void> deleteMatch(String matchId) async {
+    await _client.from('matches').delete().eq('id', matchId);
+  }
+
   RealtimeChannel subscribeToMatches(void Function() onChange) {
     return _client
         .channel('matches-changes')
