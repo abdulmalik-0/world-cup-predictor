@@ -2,8 +2,12 @@ version: '3.8'
 
 services:
   worldcup_predictor:
-    build: .
+    build:
+      context: .
+      args:
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     container_name: worldcup_predictor_app
     ports:
-      - "8085:80"
+      - "8086:80"
     restart: always

@@ -1,10 +1,10 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
+import 'package:world_cup_predictor/core/widgets/grab_scroll.dart';
 import 'package:world_cup_predictor/core/widgets/match_day_header.dart';
 import 'package:world_cup_predictor/core/widgets/scoring_rules_card.dart';
 import 'package:world_cup_predictor/features/dashboard/widgets/match_card.dart';
@@ -43,7 +43,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           final lang = Localizations.localeOf(context).languageCode;
 
           if (matches.isEmpty) {
-            return ListView(
+            return GrabScrollListView(
               children: [
                 const SizedBox(height: 120),
                 const Icon(Icons.event_busy, size: 64, color: Colors.grey),
@@ -127,7 +127,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             }
           }
 
-          return ListView(
+          return GrabScrollListView(
             padding: const EdgeInsets.all(16),
             children: [
               Text(
@@ -177,7 +177,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 }
 
-class _DayFilterBar extends StatefulWidget {
+class _DayFilterBar extends StatelessWidget {
   const _DayFilterBar({
     required this.days,
     required this.selectedKey,
@@ -193,79 +193,29 @@ class _DayFilterBar extends StatefulWidget {
   final ValueChanged<String?> onSelected;
 
   @override
-  State<_DayFilterBar> createState() => _DayFilterBarState();
-}
-
-class _DayFilterBarState extends State<_DayFilterBar> {
-  final _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _dragScroll(double deltaDx) {
-    if (!_scrollController.hasClients || deltaDx == 0) return;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    final dx = isRtl ? -deltaDx : deltaDx;
-    final max = _scrollController.position.maxScrollExtent;
-    _scrollController.jumpTo(
-      (_scrollController.offset - dx).clamp(0.0, max),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final chipFmt = DateFormat('EEE d/M', widget.lang);
+    final chipFmt = DateFormat('EEE d/M', lang);
 
-    return ScrollConfiguration(
-      behavior: const _GrabScrollBehavior(),
-      child: Listener(
-        onPointerMove: (event) {
-          if (event.buttons == 0) return;
-          _dragScroll(event.delta.dx);
-        },
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+    return GrabScrollHorizontal(
+      child: Row(
+        children: [
+          _DayChip(
+            label: allDaysLabel,
+            selected: selectedKey == null,
+            onTap: () => onSelected(null),
           ),
-          child: Row(
-            children: [
-              _DayChip(
-                label: widget.allDaysLabel,
-                selected: widget.selectedKey == null,
-                onTap: () => widget.onSelected(null),
-              ),
-              for (final day in widget.days) ...[
-                const SizedBox(width: 8),
-                _DayChip(
-                  label: chipFmt.format(day.date),
-                  selected: widget.selectedKey == day.key,
-                  onTap: () => widget.onSelected(day.key),
-                ),
-              ],
-            ],
-          ),
-        ),
+          for (final day in days) ...[
+            const SizedBox(width: 8),
+            _DayChip(
+              label: chipFmt.format(day.date),
+              selected: selectedKey == day.key,
+              onTap: () => onSelected(day.key),
+            ),
+          ],
+        ],
       ),
     );
   }
-}
-
-/// Enables click-and-drag scrolling on web/desktop (mouse) as well as touch.
-class _GrabScrollBehavior extends MaterialScrollBehavior {
-  const _GrabScrollBehavior();
-
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.trackpad,
-      };
 }
 
 class _DayChip extends StatelessWidget {

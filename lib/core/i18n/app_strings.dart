@@ -47,12 +47,12 @@ class S {
       _p('فوز أو تعادل صحيح = 1 نقطة', 'Correct winner or draw = 1 point');
   String get scoringRulesWrong => _p('توقع خاطئ = 0', 'Wrong pick = 0');
   String get scoringRulesSaudi => _p(
-        'مباريات المنتخب السعودي = نقاط مضاعفة (6 / 2) 🔥',
-        'Saudi Arabia matches = double points (6 / 2) 🔥',
+        'مباريات المنتخب السعودي 🔥: دقيقة = ٦ نقاط، صحيحة = نقطتان',
+        'Saudi Arabia matches 🔥: exact = 6 pts, correct = 2 pts',
       );
   String get scoringRulesLock => _p(
-        'يُغلق التوقع قبل صافرة البداية بـ 15 دقيقة',
-        'Predictions lock 15 minutes before kickoff',
+        'يُغلق التوقع قبل صافرة البداية بساعة',
+        'Predictions lock 1 hour before kickoff',
       );
   String get noMatches => _p('لا توجد مباريات قادمة حالياً', 'No upcoming matches');
   String get allDays => _p('جميع الأيام', 'All days');
@@ -81,8 +81,8 @@ class S {
   String get colleaguePredictions =>
       _p('توقعات الموظفين', 'Employee picks');
   String get predictionsHiddenUntilLock => _p(
-        'توقعات الزملاء تظهر بعد إغلاق نافذة التوقع (15 دقيقة قبل البداية). يمكنك رؤية توقعك فقط الآن.',
-        'Colleague picks appear after the prediction window closes (15 min before kickoff). You can only see your own pick for now.',
+        'توقعات الزملاء تظهر بعد إغلاق نافذة التوقع (ساعة قبل البداية). يمكنك رؤية توقعك فقط الآن.',
+        'Colleague picks appear after the prediction window closes (1 hour before kickoff). You can only see your own pick for now.',
       );
   String get noPredictionsYet =>
       _p('لا توجد توقعات بعد', 'No picks yet');
@@ -108,6 +108,13 @@ class S {
   String get noParticipants => _p('لا يوجد مشاركون بعد', 'No participants yet');
   String get pts => _p('نقطة', 'pts');
   String predictionsMadeCount(int n) => ar ? '$n توقع' : '$n picks';
+  String get leaderboardCorrectLabel => _p('صحيحة', 'Correct');
+  String get leaderboardExactLabel => _p('دقيقة', 'Exact');
+  String leaderboardRates(int correctPct, int exactPct) => ar
+      ? '$leaderboardCorrectLabel $correctPct٪ • $leaderboardExactLabel $exactPct٪'
+      : '$leaderboardCorrectLabel $correctPct% • $leaderboardExactLabel $exactPct%';
+  String get leaderboardNoRatesYet =>
+      _p('لا توجد مباريات منتهية بعد', 'No finished matches yet');
 
   // ── Stats ───────────────────────────────────────────────────
   String get totalPoints => _p('مجموع النقاط', 'Total points');
@@ -127,9 +134,10 @@ class S {
   String get loginSubtitle =>
       _p('سجّل دخولك بالإيميل وكلمة المرور', 'Sign in with email & password');
   String get fullName => _p('الاسم الكامل', 'Full name');
-  String get fullNameHint => _p('مثال: أحمد محمد', 'e.g. John Smith');
+  String get fullNameHint =>
+      _p('مثال: عبدالملك التميمي', 'e.g. Abdulmalik Al Tamimi');
   String get department => _p('القسم', 'Department');
-  String get departmentHint => _p('مثال: تقنية المعلومات', 'e.g. IT');
+  String get departmentHint => _p('مثال: IT', 'e.g. IT');
   String get email => _p('البريد الإلكتروني', 'Email');
   String get password => _p('كلمة المرور', 'Password');
   String get passwordHint => _p('6 أحرف على الأقل', 'At least 6 characters');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
+import 'package:world_cup_predictor/core/widgets/language_switcher.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
 class AppShell extends ConsumerWidget {
@@ -19,7 +20,10 @@ class AppShell extends ConsumerWidget {
       appBar: AppBar(
         title: Text(s.appName),
         actions: [
-          _LanguageButton(label: s.switchLanguageLabel),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: LanguageSwitcherChip(),
+          ),
           if (isAdmin)
             IconButton(
               tooltip: s.adminPanel,
@@ -84,18 +88,3 @@ class AppShell extends ConsumerWidget {
   }
 }
 
-class _LanguageButton extends ConsumerWidget {
-  const _LanguageButton({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return TextButton.icon(
-      onPressed: () => ref.read(localeProvider.notifier).toggle(),
-      style: TextButton.styleFrom(foregroundColor: Colors.white),
-      icon: const Icon(Icons.translate, size: 18),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-    );
-  }
-}

@@ -36,10 +36,30 @@ flutter run -d chrome --web-port=8080 --dart-define-from-file=env.json
 للبناء للإنتاج:
 
 ```bash
-flutter build web \
-  --dart-define=SUPABASE_URL=... \
-  --dart-define=SUPABASE_ANON_KEY=...
+flutter build web --release --dart-define-from-file=env.json
 ```
+
+ثم ارفع **مجلد `build/web` كاملاً** (يحتوي `assets/assets/images/` للخلفية والشعار).
+
+### صور التطبيق (مهم للنشر)
+
+| الملف | الاستخدام |
+|-------|-----------|
+| `assets/images/wc26_logo.png` | شعار كأس العالم (تسجيل الدخول + بطاقة المباراة) |
+| `assets/images/background.png` | خلفية الأعلام |
+
+إذا لم تُضمَّن الصور في البناء → تظهر خلفية متدرّجة وأيقونة بديلة.
+
+### Docker (على السيرفر)
+
+```bash
+cp .env.docker.example .env.docker
+# عدّل SUPABASE_URL و SUPABASE_ANON_KEY في .env.docker
+
+docker compose --env-file .env.docker up -d --build
+```
+
+الـ Dockerfile يبني Flutter داخل الحاوية ويضمّن الصور تلقائياً (لا يعتمد على `build/` المحلي).
 
 ## آلية النقاط (على السيرفر)
 
@@ -49,7 +69,7 @@ flutter build web \
 | الفائز / التعادل | 1 | 2 |
 | خطأ | 0 | 0 |
 
-- يُغلق التوقع **15 دقيقة** قبل صافرة البداية.
+- يُغلق التوقع **ساعة** قبل صافرة البداية.
 - التعديل مسموح قبل الإغلاق، ويُسجّل في `prediction_history`.
 - بعد الإغلاق، تظهر توقعات الجميع في صفحة **الطقطقة**.
 

@@ -7,7 +7,7 @@ import 'package:world_cup_predictor/core/constants/teams.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/core/utils/prediction_window.dart';
-import 'package:world_cup_predictor/core/widgets/optional_image.dart';
+import 'package:world_cup_predictor/core/widgets/world_cup_logo.dart';
 import 'package:world_cup_predictor/models/match.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 
@@ -409,40 +409,9 @@ class _Wc26Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const SizedBox(
       width: 54,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      child: const OptionalImage(
-        path: 'assets/images/wc26_logo.png',
-        fit: BoxFit.contain,
-        fallback: _Wc26Fallback(),
-      ),
-    );
-  }
-}
-
-class _Wc26Fallback extends StatelessWidget {
-  const _Wc26Fallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.emoji_events, color: Color(0xFFD4A017), size: 18),
-        SizedBox(height: 1),
-        Text(
-          '26',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            height: 1,
-          ),
-        ),
-      ],
+      child: WorldCupLogo(height: 58, showFallbackFrame: true),
     );
   }
 }

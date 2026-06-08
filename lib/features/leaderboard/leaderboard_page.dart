@@ -191,6 +191,19 @@ class _PodiumSpot extends StatelessWidget {
               fontWeight: FontWeight.w800,
               fontSize: 12),
         ),
+        if (entry.finishedPredictions > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            S.of(context).leaderboardRates(
+              entry.correctPercent,
+              entry.exactPercent,
+            ),
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
         const SizedBox(height: 6),
         Container(
           height: height,
@@ -212,6 +225,36 @@ class _PodiumSpot extends StatelessWidget {
               fontWeight: FontWeight.w900,
               fontSize: 22,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LeaderboardSubtitle extends StatelessWidget {
+  const _LeaderboardSubtitle({required this.entry});
+
+  final LeaderboardEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${entry.department} • ${s.predictionsMadeCount(entry.predictionsMade)}',
+        ),
+        const SizedBox(height: 2),
+        Text(
+          entry.finishedPredictions == 0
+              ? s.leaderboardNoRatesYet
+              : s.leaderboardRates(entry.correctPercent, entry.exactPercent),
+          style: TextStyle(
+            color: AppTheme.pitchGreen.withValues(alpha: 0.95),
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
           ),
         ),
       ],
@@ -245,8 +288,8 @@ class _LeaderboardTile extends StatelessWidget {
           entry.fullName,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text(
-            '${entry.department} • ${S.of(context).predictionsMadeCount(entry.predictionsMade)}'),
+        subtitle: _LeaderboardSubtitle(entry: entry),
+        isThreeLine: true,
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,

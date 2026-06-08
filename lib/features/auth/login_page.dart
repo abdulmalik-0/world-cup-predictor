@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
-import 'package:world_cup_predictor/core/theme/app_theme.dart';
+import 'package:world_cup_predictor/core/widgets/auth_brand_header.dart';
+import 'package:world_cup_predictor/core/widgets/grab_scroll.dart';
+import 'package:world_cup_predictor/core/widgets/language_switcher.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 import 'package:world_cup_predictor/services/auth_service.dart';
 
@@ -100,62 +102,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Directionality(
       textDirection: s.ar ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          actions: [
-            TextButton.icon(
-              onPressed: () => ref.read(localeProvider.notifier).toggle(),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              icon: const Icon(Icons.translate, size: 18),
-              label: Text(s.switchLanguageLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Center(
+                child: GrabScrollSingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.heroGradient,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryGreen.withValues(alpha: 0.5),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.emoji_events,
-                            size: 52, color: AppTheme.accentGold),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      s.appName,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isRegister ? s.registerSubtitle : s.loginSubtitle,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                    AuthBrandHeader(
+                      subtitle:
+                          _isRegister ? s.registerSubtitle : s.loginSubtitle,
                     ),
                     const SizedBox(height: 32),
                     if (_isRegister) ...[
@@ -259,10 +219,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            const Positioned(
+              top: 8,
+              left: 12,
+              child: SafeArea(child: LanguageSwitcherChip()),
+            ),
+          ],
         ),
       ),
     );
