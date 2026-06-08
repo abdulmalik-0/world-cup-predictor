@@ -44,7 +44,9 @@ class _MatchCardState extends State<MatchCard> {
     super.initState();
     _home = widget.prediction?.homeScore ?? 0;
     _away = widget.prediction?.awayScore ?? 0;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    // Coarse ticker only to refresh open/closed state — the live countdown
+    // runs in its own _ClockTab widget, so the card doesn't rebuild every second.
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -131,9 +133,14 @@ class _MatchCardState extends State<MatchCard> {
       nameAr: match.awayTeam,
       nameEn: match.awayTeamEn,
     );
+    final nameStyle = Theme.of(context)
+        .textTheme
+        .bodyMedium
+        ?.copyWith(fontWeight: FontWeight.w700);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: const Color(0x99152A3D),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
         child: Column(
@@ -151,16 +158,35 @@ class _MatchCardState extends State<MatchCard> {
               onAway: (v) => setState(() => _away = v),
             ),
             const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                    s.ar
-                        ? '${home.nameAr}  ×  ${away.nameAr}'
-                        : '${home.nameEn}  ×  ${away.nameEn}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700)),
-              ],
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      s.ar ? home.nameAr : home.nameEn,
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: nameStyle,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text('×', style: nameStyle),
+                  ),
+                  Flexible(
+                    child: Text(
+                      s.ar ? away.nameAr : away.nameEn,
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: nameStyle,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 2),
             Row(
@@ -273,8 +299,7 @@ class _ScoreBug extends StatelessWidget {
   final ValueChanged<int> onHome;
   final ValueChanged<int> onAway;
 
-  static const _scoreBg = Color(0xFF0E2A1E);
-  static const _codeBg = Color(0xFF0C0C0C);
+  static const _scoreBg = Color(0x00000000); // transparent on white glass
 
   @override
   Widget build(BuildContext context) {
@@ -286,22 +311,27 @@ class _ScoreBug extends StatelessWidget {
           Material(
             color: Colors.transparent,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                height: 70,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(width: 5, color: _jerseyColor(home)),
-                    Expanded(child: _codePanel(_code3(home))),
-                    _flag(home),
-                    _scoreCell(homeScore, onHome, 'h'),
-                    const _Wc26Badge(),
-                    _scoreCell(awayScore, onAway, 'a'),
-                    _flag(away),
-                    Expanded(child: _codePanel(_code3(away))),
-                    Container(width: 5, color: _jerseyColor(away)),
-                  ],
+              borderRadius: BorderRadius.circular(18),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xE6152A3D),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0x33FFFFFF)),
+                ),
+                child: SizedBox(
+                  height: 70,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(width: 5, color: _jerseyColor(home)),
+                      Expanded(child: _flag(home)),
+                      _scoreCell(homeScore, onHome, 'h'),
+                      const _Wc26Badge(),
+                      _scoreCell(awayScore, onAway, 'a'),
+                      Expanded(child: _flag(away)),
+                      Container(width: 5, color: _jerseyColor(away)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -311,7 +341,7 @@ class _ScoreBug extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _ClockTab(kickoff: kickoff, open: open),
+                _ClockTab(kickoff: kickoff),
                 if (isSaudi) ...[
                   const SizedBox(width: 8),
                   const _DoubleBadge(),
@@ -324,37 +354,14 @@ class _ScoreBug extends StatelessWidget {
     );
   }
 
-  Widget _codePanel(String code) => Container(
-        color: _codeBg,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            code,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: 1.5,
-            ),
-          ),
-        ),
-      );
-
-  Widget _flag(TeamInfo t) => Container(
-        width: 52,
-        color: _codeBg,
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 5),
-        alignment: Alignment.center,
+  Widget _flag(TeamInfo t) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
         child: t.flagUrl.isEmpty
-            ? const Icon(Icons.flag, color: Colors.white24, size: 18)
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: CachedNetworkImage(
-                  imageUrl: t.flagUrl,
-                  fit: BoxFit.contain,
-                ),
+            ? const Center(
+                child: Icon(Icons.flag, color: Colors.white24, size: 22))
+            : CachedNetworkImage(
+                imageUrl: t.flagUrl,
+                fit: BoxFit.contain,
               ),
       );
 
@@ -397,7 +404,8 @@ class _ScoreBug extends StatelessWidget {
         child: SizedBox(
           height: 20,
           child: Icon(icon,
-              size: 18, color: onTap == null ? Colors.white24 : Colors.white),
+              size: 18,
+              color: onTap == null ? Colors.white24 : Colors.white),
         ),
       );
 }
@@ -417,15 +425,38 @@ class _Wc26Badge extends StatelessWidget {
 }
 
 /// The green clock tab hanging under the bug — shows the live countdown.
-class _ClockTab extends StatelessWidget {
-  const _ClockTab({required this.kickoff, required this.open});
+/// Has its own 1s ticker so only this tiny widget rebuilds each second
+/// (not the whole match card) — keeps scrolling smooth.
+class _ClockTab extends StatefulWidget {
+  const _ClockTab({required this.kickoff});
 
   final DateTime kickoff;
-  final bool open;
+
+  @override
+  State<_ClockTab> createState() => _ClockTabState();
+}
+
+class _ClockTabState extends State<_ClockTab> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final open = isPredictionOpen(widget.kickoff);
     if (!open) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -448,7 +479,7 @@ class _ClockTab extends StatelessWidget {
       );
     }
 
-    final d = timeUntilPredictionCloses(kickoff);
+    final d = timeUntilPredictionCloses(widget.kickoff);
     final days = d.inDays;
     final hh = d.inHours.remainder(24).toString().padLeft(2, '0');
     final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -657,13 +688,6 @@ class _ResultChip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
-String _code3(TeamInfo t) {
-  final letters = t.nameEn.replaceAll(RegExp(r'[^A-Za-z]'), '');
-  if (letters.length >= 3) return letters.substring(0, 3).toUpperCase();
-  if (letters.isNotEmpty) return letters.toUpperCase();
-  return t.code.toUpperCase();
-}
-
 const _jerseyPalette = <Color>[
   Color(0xFFE53935), // red
   Color(0xFF1E88E5), // blue

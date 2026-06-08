@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
@@ -22,6 +21,9 @@ class DashboardPage extends ConsumerStatefulWidget {
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   /// `null` = all days; otherwise `yyyy-MM-dd`.
   String? _selectedDayKey;
+
+  /// How many matches are rendered at once (paged in 20s for smooth scroll).
+  int _visibleCount = 20;
 
   @override
   Widget build(BuildContext context) {
@@ -70,10 +72,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   .where((m) => dayFmt.format(m.kickoffAt) == _selectedDayKey)
                   .toList();
 
+          // Page the list so only a limited number of cards render at once.
+          final visible = filtered.take(_visibleCount).toList();
+
           final showDayHeaders = _selectedDayKey == null;
           final children = <Widget>[];
           String? lastDay;
-          var animIndex = 0;
 
           if (filtered.isEmpty) {
             children.add(
@@ -83,7 +87,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
             );
           } else {
-            for (final match in filtered) {
+            for (final match in visible) {
               final dayKey = dayFmt.format(match.kickoffAt);
               if (showDayHeaders && dayKey != lastDay) {
                 lastDay = dayKey;
@@ -91,13 +95,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     .where((m) => dayFmt.format(m.kickoffAt) == dayKey)
                     .length;
                 children.add(
-                  MatchDayHeader(date: match.kickoffAt, count: count)
-                      .animate()
-                      .fadeIn(delay: (animIndex * 50).ms, duration: 300.ms),
+                  MatchDayHeader(date: match.kickoffAt, count: count),
                 );
               }
               children.add(
-                MatchCard(
+                RepaintBoundary(
+                  child: MatchCard(
                   match: match,
                   prediction: predictions[match.id],
                   onViewPredictions: () => showMatchPredictionsSheet(
@@ -118,13 +121,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     );
                     ref.invalidate(myPredictionsProvider);
                   },
-                )
-                    .animate()
-                    .fadeIn(delay: (animIndex * 50).ms, duration: 320.ms)
-                    .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
+                ),
+                ),
               );
-              animIndex++;
             }
+          }
+
+          if (filtered.length > visible.length) {
+            children.add(
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: OutlinedButton.icon(
+                  onPressed: () => setState(() => _visibleCount += 20),
+                  icon: const Icon(Icons.expand_more),
+                  label: Text(
+                    s.ar
+                        ? 'عرض المزيد (${filtered.length - visible.length})'
+                        : 'Show more (${filtered.length - visible.length})',
+                  ),
+                ),
+              ),
+            );
           }
 
           return GrabScrollListView(
@@ -150,7 +167,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 selectedKey: _selectedDayKey,
                 allDaysLabel: s.allDays,
                 lang: lang,
-                onSelected: (key) => setState(() => _selectedDayKey = key),
+                onSelected: (key) => setState(() {
+                  _selectedDayKey = key;
+                  _visibleCount = 20;
+                }),
               ),
               const SizedBox(height: 8),
               ...children,
