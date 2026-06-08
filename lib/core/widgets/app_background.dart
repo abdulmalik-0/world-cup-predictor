@@ -3,22 +3,23 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/core/widgets/optional_image.dart';
 
-/// A living app-wide background. Uses assets/images/background.png (the flags
-/// collage) with a slow Ken-Burns motion behind a dark scrim so content stays
-/// readable. Falls back to a gradient + glows if the image is missing.
+/// A living app-wide background. Uses the World Cup 26 banner with a slow
+/// Ken-Burns motion behind a dark scrim so content stays readable.
+/// Falls back to a gradient + glows if the image is missing.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, required this.child});
 
   final Widget child;
 
-  // Dark navy scrim: darker at the edges, a little clearer in the middle.
+  // Dark navy scrim: darker at the edges, clearer in the middle so the
+  // banner (trophy + 26) shows through.
   static const _scrim = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xF20A1622),
-      Color(0xC20A1622),
-      Color(0xF20A1622),
+      Color(0xE60A1622),
+      Color(0xA00A1622),
+      Color(0xE60A1622),
     ],
     stops: [0.0, 0.5, 1.0],
   );
@@ -30,7 +31,7 @@ class AppBackground extends StatelessWidget {
       children: [
         // 1) Image base with slow Ken-Burns motion (gradient fallback).
         const OptionalImage(
-          path: 'assets/images/background.png',
+          path: 'assets/images/background1.jpeg',
           fit: BoxFit.cover,
           cacheWidth: 1280,
           fallback: _GradientFallback(),
