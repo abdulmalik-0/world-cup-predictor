@@ -101,18 +101,18 @@ WHERE id = (SELECT id FROM auth.users WHERE email = 'you@company.com');
 
 ## مزامنة النتائج تلقائياً (API)
 
-دالة `supabase/functions/sync-results` تجلب النتائج النهائية من مزوّد بيانات وتكتبها في الجدول.
+دالة `supabase/functions/sync-results` تجلب مباريات **كأس العالم فقط** من [football-data.org](https://www.football-data.org) (`competitions/WC?season=2026`) وتربطها بجدول `matches` تلقائياً (حسب الفرق + وقت البداية)، ثم تحدّث النتائج عند انتهاء المباراة.
 
-> ⚠️ تستخدم مفتاح `service_role` من **جهة الخادم فقط** (سرّ في Supabase) — لا يوضع أبداً في تطبيق الويب.
+> ⚠️ مفتاح الـ API و `service_role` يبقيان **على الخادم فقط** (سرّ Supabase) — لا يوضعان في تطبيق الويب.
 
-```bash
-# اربط مباريات الجدول بمعرّفات المزوّد عبر حقل "معرّف الـ API" في لوحة التحكم
+```powershell
+# 1) انسخ supabase/.env.example إلى supabase/.env وضع مفتاحك
+# 2) ارفع الأسرار وانشر الدالة:
+powershell -ExecutionPolicy Bypass -File .\tool\set_football_secrets.ps1
 supabase functions deploy sync-results
-supabase secrets set FOOTBALL_API_KEY=YOUR_KEY
-# SUPABASE_URL و SUPABASE_SERVICE_ROLE_KEY تُحقن تلقائياً
 ```
 
-المزوّد الافتراضي [football-data.org](https://www.football-data.org). لتغييره عدّل `fetchProviderResult` في الدالة. جدوِل التشغيل (كل ١٠ دقائق مثلاً) عبر pg_cron أو أي cron خارجي يستدعي رابط الدالة.
+يمكن أيضاً ربط مباراة يدوياً بحقل **معرّف الـ API** في لوحة التحكم. جدوِل التشغيل (كل ١٠ دقائق مثلاً) عبر pg_cron أو cron خارجي يستدعي رابط الدالة.
 
 ## إدارة المباريات
 

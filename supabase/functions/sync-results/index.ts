@@ -1,67 +1,169 @@
 // Supabase Edge Function: sync-results
 // ---------------------------------------------------------------------------
-// Pulls final scores from a football data provider and writes them into the
-// `matches` table. Setting status='finished' fires the DB trigger that awards
-// points to every prediction automatically.
+// Syncs FIFA World Cup matches from football-data.org (competition WC only).
+// One API call fetches all WC fixtures; local rows are matched by external_ref
+// or by home/away team codes + kickoff time, then scores/status are updated.
 //
-// SECURITY: this runs server-side and uses the SERVICE_ROLE key (which bypasses
-// RLS). NEVER put the service_role key in the Flutter web app — only here, as a
-// Supabase function secret.
-//
-// Mapping: each local match must have `external_ref` set to the provider's
-// fixture id (you set this from the in-app Admin panel when adding a match).
-//
-// Default provider: football-data.org (v4). To use another API, change
-// `fetchProviderResult` below.
+// Secrets (Supabase Dashboard → Edge Functions → Secrets):
+//   FOOTBALL_API_KEY
+//   FOOTBALL_COMPETITION_CODE=WC   (default)
+//   FOOTBALL_SEASON=2026           (default)
 //
 // Deploy:
 //   supabase functions deploy sync-results
-//   supabase secrets set FOOTBALL_API_KEY=xxxxx
-//   (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically)
-//
-// Schedule (every 10 min) with pg_cron + pg_net, or call the URL from any cron.
 // ---------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+/** football-data.org TLA → app team codes (single file for Dashboard deploy). */
+const TLA_TO_CODE: Record<string, string> = {
+  MEX: "MX", RSA: "ZA", KOR: "KR", CZE: "CZ", CAN: "CA", USA: "US", PAR: "PY",
+  QAT: "QA", SUI: "CH", BRA: "BR", MAR: "MA", SCO: "SF", HAI: "HT", AUS: "AU",
+  TUR: "TR", GER: "DE", CUW: "CW", NED: "NL", JPN: "JP", CIV: "CI", ECU: "EC",
+  SWE: "SE", TUN: "TN", ESP: "ES", CPV: "CV", BEL: "BE", EGY: "EG", URU: "UY",
+  KSA: "SA", IRN: "IR", NZL: "NZ", FRA: "FR", SEN: "SN", IRQ: "IQ", NOR: "NO",
+  ARG: "AR", ALG: "DZ", AUT: "AT", JOR: "JO", POR: "PT", COD: "CD", ENG: "EN",
+  CRO: "HR", GHA: "GH", PAN: "PA", UZB: "UZ", COL: "CO", BIH: "BA",
+};
+
+function tlaToCode(tla: string | null | undefined): string | null {
+  if (!tla) return null;
+  const key = tla.toUpperCase();
+  return TLA_TO_CODE[key] ?? key.slice(0, 2);
+}
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const API_KEY = Deno.env.get("FOOTBALL_API_KEY") ?? "";
 const API_BASE = Deno.env.get("FOOTBALL_API_BASE") ??
   "https://api.football-data.org/v4";
+const COMPETITION = Deno.env.get("FOOTBALL_COMPETITION_CODE") ?? "WC";
+const SEASON = Deno.env.get("FOOTBALL_SEASON") ?? "2026";
 
-interface ProviderResult {
-  finished: boolean;
-  homeScore: number | null;
-  awayScore: number | null;
+const KICKOFF_TOLERANCE_MS = 3 * 60 * 60 * 1000;
+
+interface ApiMatch {
+  id: number;
+  utcDate: string;
+  status: string;
+  homeTeam: { tla?: string };
+  awayTeam: { tla?: string };
+  score?: { fullTime?: { home?: number | null; away?: number | null } };
 }
 
-/// Adapt this to your provider. Returns null if the fixture can't be read.
-async function fetchProviderResult(
-  externalRef: string,
-): Promise<ProviderResult | null> {
-  const res = await fetch(`${API_BASE}/matches/${externalRef}`, {
+interface LocalMatch {
+  id: string;
+  external_ref: string | null;
+  home_team_code: string;
+  away_team_code: string;
+  kickoff_at: string;
+  status: string;
+}
+
+function mapApiStatus(status: string): "scheduled" | "live" | "finished" | "cancelled" | null {
+  switch (status) {
+    case "FINISHED":
+      return "finished";
+    case "IN_PLAY":
+    case "PAUSED":
+    case "LIVE":
+      return "live";
+    case "SCHEDULED":
+    case "TIMED":
+      return "scheduled";
+    case "POSTPONED":
+    case "SUSPENDED":
+    case "CANCELLED":
+      return "cancelled";
+    default:
+      return null;
+  }
+}
+
+function pairKey(home: string, away: string): string {
+  return `${home}|${away}`;
+}
+
+function apiPairKey(m: ApiMatch): string | null {
+  const home = tlaToCode(m.homeTeam?.tla);
+  const away = tlaToCode(m.awayTeam?.tla);
+  if (!home || !away) return null;
+  return pairKey(home, away);
+}
+
+async function fetchWorldCupMatches(): Promise<ApiMatch[]> {
+  if (!API_KEY) {
+    throw new Error("FOOTBALL_API_KEY is not set");
+  }
+
+  const url =
+    `${API_BASE}/competitions/${COMPETITION}/matches?season=${SEASON}`;
+  const res = await fetch(url, {
     headers: { "X-Auth-Token": API_KEY },
   });
-  if (!res.ok) return null;
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`football-data.org ${res.status}: ${body}`);
+  }
 
   const data = await res.json();
-  const ft = data?.score?.fullTime ?? {};
-  return {
-    finished: data?.status === "FINISHED",
-    homeScore: ft.home ?? null,
-    awayScore: ft.away ?? null,
-  };
+  return (data?.matches ?? []) as ApiMatch[];
+}
+
+function findApiMatch(
+  local: LocalMatch,
+  byExternalRef: Map<string, ApiMatch>,
+  byPairAndTime: ApiMatch[],
+): ApiMatch | null {
+  if (local.external_ref) {
+    const hit = byExternalRef.get(local.external_ref);
+    if (hit) return hit;
+  }
+
+  const localKickoff = new Date(local.kickoff_at).getTime();
+  const key = pairKey(local.home_team_code, local.away_team_code);
+
+  let best: ApiMatch | null = null;
+  let bestDelta = Infinity;
+
+  for (const api of byPairAndTime) {
+    if (apiPairKey(api) !== key) continue;
+    const delta = Math.abs(new Date(api.utcDate).getTime() - localKickoff);
+    if (delta <= KICKOFF_TOLERANCE_MS && delta < bestDelta) {
+      best = api;
+      bestDelta = delta;
+    }
+  }
+
+  return best;
 }
 
 Deno.serve(async () => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-  // Only matches that are mapped and not finished yet.
-  const { data: matches, error } = await supabase
+  let apiMatches: ApiMatch[];
+  try {
+    apiMatches = await fetchWorldCupMatches();
+  } catch (e) {
+    return new Response(
+      JSON.stringify({
+        error: e instanceof Error ? e.message : String(e),
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const byExternalRef = new Map<string, ApiMatch>();
+  for (const m of apiMatches) {
+    byExternalRef.set(String(m.id), m);
+  }
+
+  const { data: localMatches, error } = await supabase
     .from("matches")
-    .select("id, external_ref, status")
-    .not("external_ref", "is", null)
+    .select(
+      "id, external_ref, home_team_code, away_team_code, kickoff_at, status",
+    )
     .neq("status", "finished");
 
   if (error) {
@@ -71,38 +173,74 @@ Deno.serve(async () => {
     });
   }
 
+  let linked = 0;
   let updated = 0;
   const errors: string[] = [];
 
-  for (const m of matches ?? []) {
+  for (const local of (localMatches ?? []) as LocalMatch[]) {
+    if (local.home_team_code === "XX" || local.away_team_code === "YY") {
+      continue;
+    }
+
     try {
-      const result = await fetchProviderResult(m.external_ref as string);
+      const api = findApiMatch(local, byExternalRef, apiMatches);
+      if (!api) continue;
+
+      const patch: Record<string, unknown> = {};
+      const ref = String(api.id);
+
+      if (!local.external_ref || local.external_ref !== ref) {
+        patch.external_ref = ref;
+        linked++;
+      }
+
+      const mappedStatus = mapApiStatus(api.status);
+      const ft = api.score?.fullTime ?? {};
+
       if (
-        result?.finished &&
-        result.homeScore !== null &&
-        result.awayScore !== null
+        mappedStatus === "finished" &&
+        ft.home !== null &&
+        ft.home !== undefined &&
+        ft.away !== null &&
+        ft.away !== undefined
       ) {
-        const { error: upErr } = await supabase
-          .from("matches")
-          .update({
-            home_score: result.homeScore,
-            away_score: result.awayScore,
-            status: "finished",
-          })
-          .eq("id", m.id);
-        if (upErr) {
-          errors.push(`${m.id}: ${upErr.message}`);
-        } else {
-          updated++;
-        }
+        patch.home_score = ft.home;
+        patch.away_score = ft.away;
+        patch.status = "finished";
+        updated++;
+      } else if (mappedStatus === "live" && local.status !== "live") {
+        patch.status = "live";
+        updated++;
+      } else if (mappedStatus === "cancelled" && local.status !== "cancelled") {
+        patch.status = "cancelled";
+        updated++;
+      }
+
+      if (Object.keys(patch).length === 0) continue;
+
+      const { error: upErr } = await supabase
+        .from("matches")
+        .update(patch)
+        .eq("id", local.id);
+
+      if (upErr) {
+        errors.push(`${local.id}: ${upErr.message}`);
       }
     } catch (e) {
-      errors.push(`${m.id}: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`${local.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   return new Response(
-    JSON.stringify({ checked: matches?.length ?? 0, updated, errors }),
+    JSON.stringify({
+      competition: COMPETITION,
+      season: SEASON,
+      apiMatches: apiMatches.length,
+      checked: localMatches?.length ?? 0,
+      linked,
+      updated,
+      errors,
+    }),
     { headers: { "Content-Type": "application/json" } },
   );
 });
