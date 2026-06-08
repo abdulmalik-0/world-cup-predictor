@@ -24,5 +24,5 @@ String formatCountdown(Duration d) {
   return '${d.inMinutes}د ${d.inSeconds.remainder(60)}ث';
 }
 
-bool isArabTeamCode(String code) =>
-    arabTeamCodes.contains(code.toUpperCase().trim());
+bool isSaudiTeamCode(String code) =>
+    code.toUpperCase().trim() == saudiTeamCode;

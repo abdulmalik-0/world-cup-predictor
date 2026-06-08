@@ -5,9 +5,9 @@ class ScoringLogic {
     required int predictedAway,
     required int actualHome,
     required int actualAway,
-    required bool isArabMatch,
+    required bool isSaudiMatch,
   }) {
-    final multiplier = isArabMatch ? 2 : 1;
+    final multiplier = isSaudiMatch ? 2 : 1;
     var base = 0;
 
     if (predictedHome == actualHome && predictedAway == actualAway) {
@@ -26,8 +26,8 @@ class ScoringLogic {
     return false;
   }
 
-  static String pointsLabel({required bool isArabMatch, required bool isExact}) {
-    if (isArabMatch) {
+  static String pointsLabel({required bool isSaudiMatch, required bool isExact}) {
+    if (isSaudiMatch) {
       return isExact ? '6 نقاط (دبل 🔥)' : '2 نقطة (دبل 🔥)';
     }
     return isExact ? '3 نقاط' : '1 نقطة';

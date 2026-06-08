@@ -10,7 +10,7 @@ void main() {
           predictedAway: 1,
           actualHome: 2,
           actualAway: 1,
-          isArabMatch: false,
+          isSaudiMatch: false,
         ),
         3,
       );
@@ -23,7 +23,7 @@ void main() {
           predictedAway: 0,
           actualHome: 3,
           actualAway: 1,
-          isArabMatch: false,
+          isSaudiMatch: false,
         ),
         1,
       );
@@ -36,33 +36,33 @@ void main() {
           predictedAway: 0,
           actualHome: 0,
           actualAway: 1,
-          isArabMatch: false,
+          isSaudiMatch: false,
         ),
         0,
       );
     });
 
-    test('exact score arab match = 6', () {
+    test('exact score saudi match = 6', () {
       expect(
         ScoringLogic.calculate(
           predictedHome: 2,
           predictedAway: 1,
           actualHome: 2,
           actualAway: 1,
-          isArabMatch: true,
+          isSaudiMatch: true,
         ),
         6,
       );
     });
 
-    test('correct winner arab match = 2', () {
+    test('correct winner saudi match = 2', () {
       expect(
         ScoringLogic.calculate(
           predictedHome: 1,
           predictedAway: 1,
           actualHome: 0,
           actualAway: 0,
-          isArabMatch: true,
+          isSaudiMatch: true,
         ),
         2,
       );

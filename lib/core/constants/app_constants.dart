@@ -1,8 +1,5 @@
-/// Arab national team ISO codes (double points matches).
-const arabTeamCodes = {
-  'SA', 'EG', 'MA', 'TN', 'DZ', 'QA', 'AE', 'JO', 'IQ', 'LB',
-  'SY', 'YE', 'KW', 'BH', 'OM', 'PS', 'SD', 'LY', 'MR', 'SO', 'DJ', 'KM',
-};
+/// Saudi Arabia — matches with SA get double points.
+const saudiTeamCode = 'SA';
 
 const predictionLockMinutes = 15;
 

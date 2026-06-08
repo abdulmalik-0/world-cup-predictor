@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/core/constants/teams.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
+import 'package:world_cup_predictor/core/widgets/match_day_header.dart';
 import 'package:world_cup_predictor/models/match.dart';
 import 'package:world_cup_predictor/providers/app_providers.dart';
 
@@ -60,11 +62,38 @@ class AdminPage extends ConsumerWidget {
                       if (matches.isEmpty) {
                         return Center(child: Text(s.noMatchesAdmin));
                       }
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: matches.length,
-                        itemBuilder: (_, i) => _AdminMatchTile(
-                            match: matches[i], onChanged: () => _refresh(ref)),
+
+                      final dayFmt = DateFormat('yyyy-MM-dd');
+                      final children = <Widget>[];
+                      String? lastDay;
+
+                      for (final match in matches) {
+                        final dayKey = dayFmt.format(match.kickoffAt);
+                        if (dayKey != lastDay) {
+                          lastDay = dayKey;
+                          final count = matches
+                              .where(
+                                (m) => dayFmt.format(m.kickoffAt) == dayKey,
+                              )
+                              .length;
+                          children.add(
+                            MatchDayHeader(
+                              date: match.kickoffAt,
+                              count: count,
+                            ),
+                          );
+                        }
+                        children.add(
+                          _AdminMatchTile(
+                            match: match,
+                            onChanged: () => _refresh(ref),
+                          ),
+                        );
+                      }
+
+                      return ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                        children: children,
                       );
                     },
                   ),
@@ -140,6 +169,43 @@ class _AdminMatchTile extends ConsumerWidget {
                   );
                   if (ok == true) onChanged();
                 }
+              case 'reset':
+                {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text(s.resetResult),
+                      content: Text(s.resetResultQ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text(s.cancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(s.resetResult),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok == true) {
+                    try {
+                      await service.resetMatchToScheduled(match.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(s.resetResultDone)),
+                        );
+                      }
+                      onChanged();
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(s.errResetResult)),
+                        );
+                      }
+                    }
+                  }
+                }
               case 'delete':
                 {
                   final ok = await showDialog<bool>(
@@ -168,6 +234,9 @@ class _AdminMatchTile extends ConsumerWidget {
           },
           itemBuilder: (_) => [
             PopupMenuItem(value: 'result', child: Text(s.enterResult)),
+            if (match.status == MatchStatus.finished ||
+                match.homeScore != null)
+              PopupMenuItem(value: 'reset', child: Text(s.resetResult)),
             PopupMenuItem(value: 'delete', child: Text(s.delete)),
           ],
         ),
@@ -375,11 +444,26 @@ class _AddMatchSheetState extends ConsumerState<_AddMatchSheet> {
             externalRef: _externalRef.text.trim(),
           );
       if (mounted) Navigator.pop(context, true);
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          final s = S.of(context);
+          if (e.code == '42501' || e.message.contains('policy')) {
+            _error = s.errAdminRls;
+          } else if (e.code == '23505' &&
+              e.message.contains('external_ref')) {
+            _error = s.errDuplicateApiId;
+          } else {
+            _error = s.errAddMatchDetail(e.message);
+          }
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = S.of(context).errAddMatch;
+          _error = S.of(context).errAddMatchDetail(e.toString());
         });
       }
     }

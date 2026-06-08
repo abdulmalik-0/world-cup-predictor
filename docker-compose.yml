@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  worldcup_predictor:
+    build: .
+    container_name: worldcup_predictor_app
+    ports:
+      - "8085:80"
+    restart: always

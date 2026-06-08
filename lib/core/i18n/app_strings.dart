@@ -37,10 +37,27 @@ class S {
   // ── Dashboard ───────────────────────────────────────────────
   String get upcomingMatches => _p('المباريات القادمة', 'Upcoming Matches');
   String get predictionHint => _p(
-        'يُغلق التوقع قبل صافرة البداية بـ 15 دقيقة • مباريات العرب = نقاط مضاعفة 🔥',
-        'Predictions lock 15 min before kickoff • Arab teams = double points 🔥',
+        'اختر يوماً لعرض مبارياته، أو اترك «جميع الأيام»',
+        'Pick a day to filter matches, or keep «All days»',
+      );
+  String get scoringRulesTitle => _p('طريقة حساب النقاط', 'How points work');
+  String get scoringRulesExact =>
+      _p('نتيجة دقيقة = 3 نقاط', 'Exact score = 3 points');
+  String get scoringRulesWinner =>
+      _p('فوز أو تعادل صحيح = 1 نقطة', 'Correct winner or draw = 1 point');
+  String get scoringRulesWrong => _p('توقع خاطئ = 0', 'Wrong pick = 0');
+  String get scoringRulesSaudi => _p(
+        'مباريات المنتخب السعودي = نقاط مضاعفة (6 / 2) 🔥',
+        'Saudi Arabia matches = double points (6 / 2) 🔥',
+      );
+  String get scoringRulesLock => _p(
+        'يُغلق التوقع قبل صافرة البداية بـ 15 دقيقة',
+        'Predictions lock 15 minutes before kickoff',
       );
   String get noMatches => _p('لا توجد مباريات قادمة حالياً', 'No upcoming matches');
+  String get allDays => _p('جميع الأيام', 'All days');
+  String get noMatchesThisDay =>
+      _p('لا توجد مباريات في هذا اليوم', 'No matches on this day');
   String matchesCount(int n) => ar
       ? '$n ${n == 1 ? 'مباراة' : (n == 2 ? 'مباراتان' : 'مباريات')}'
       : '$n ${n == 1 ? 'match' : 'matches'}';
@@ -60,8 +77,22 @@ class S {
   String get yourPick => _p('توقعك', 'Your pick');
   String get notPredicted =>
       _p('لم تتوقع هذه المباراة', "You didn't predict this match");
+  String get viewPredictions => _p('التوقعات', 'Picks');
+  String get colleaguePredictions =>
+      _p('توقعات الموظفين', 'Employee picks');
+  String get predictionsHiddenUntilLock => _p(
+        'توقعات الزملاء تظهر بعد إغلاق نافذة التوقع (15 دقيقة قبل البداية). يمكنك رؤية توقعك فقط الآن.',
+        'Colleague picks appear after the prediction window closes (15 min before kickoff). You can only see your own pick for now.',
+      );
+  String get noPredictionsYet =>
+      _p('لا توجد توقعات بعد', 'No picks yet');
+  String get youLabel => _p('أنت', 'You');
+  String get errLoadPredictions => _p(
+        'تعذّر تحميل التوقعات',
+        'Could not load picks',
+      );
   String points(int n) => _p('+$n نقطة', '+$n pts');
-  String get doubleBadge => _p('دبل 🔥', 'Double 🔥');
+  String get doubleBadge => _p('دبل السعودية 🔥', 'Saudi double 🔥');
   String get errWindow =>
       _p('انتهى وقت التوقع لهذه المباراة', 'Prediction window has closed');
   String get errRls => _p(
@@ -156,4 +187,22 @@ class S {
   String get sameTeam =>
       _p('لا يمكن اختيار نفس الفريق', "Can't pick the same team");
   String get errAddMatch => _p('تعذّر إضافة المباراة', 'Could not add match');
+  String get resetResult => _p('إلغاء النتيجة', 'Undo result');
+  String get resetResultQ => _p(
+        'إرجاع المباراة لـ «لم تُلعب»؟\nسيتم حذف النتيجة وإلغاء النقاط المحسوبة.',
+        'Mark match as not played?\nThis clears the score and removes awarded points.',
+      );
+  String get resetResultDone => _p('تم إلغاء النتيجة', 'Result cleared');
+  String get errResetResult => _p('تعذّر إلغاء النتيجة', 'Could not reset result');
+  String errAddMatchDetail(String detail) => ar
+      ? 'تعذّر إضافة المباراة: $detail'
+      : 'Could not add match: $detail';
+  String get errAdminRls => _p(
+        'صلاحيات غير كافية — تأكد من تشغيل migration 003 وتفعيل is_admin لحسابك',
+        'Insufficient permissions — run migration 003 and set is_admin on your profile',
+      );
+  String get errDuplicateApiId => _p(
+        'معرّف API مستخدم مسبقاً لمباراة أخرى',
+        'This API id is already used by another match',
+      );
 }

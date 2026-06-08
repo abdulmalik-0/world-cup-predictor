@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
 import 'package:world_cup_predictor/models/match.dart';
+import 'package:world_cup_predictor/models/match_prediction_entry.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 import 'package:world_cup_predictor/models/prediction_history.dart';
 
@@ -104,6 +105,26 @@ class MatchService {
         .toList();
   }
 
+  /// Predictions for a match with employee name and department.
+  Future<List<MatchPredictionEntry>> fetchMatchPredictionsWithProfiles(
+    String matchId,
+  ) async {
+    final rows = await _client
+        .from('predictions')
+        .select('*, profiles(full_name, department)')
+        .eq('match_id', matchId)
+        .order('updated_at', ascending: false);
+
+    final entries = (rows as List)
+        .map((e) => MatchPredictionEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    entries.sort(
+      (a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
+    );
+    return entries;
+  }
+
   Future<List<PredictionHistoryEntry>> fetchPredictionHistory(
     String predictionId,
   ) async {
@@ -194,6 +215,15 @@ class MatchService {
       'home_score': homeScore,
       'away_score': awayScore,
       'status': finished ? 'finished' : 'live',
+    }).eq('id', matchId);
+  }
+
+  /// Undo a result — match returns to scheduled and points are cleared (migration 005).
+  Future<void> resetMatchToScheduled(String matchId) async {
+    await _client.from('matches').update({
+      'home_score': null,
+      'away_score': null,
+      'status': 'scheduled',
     }).eq('id', matchId);
   }
 

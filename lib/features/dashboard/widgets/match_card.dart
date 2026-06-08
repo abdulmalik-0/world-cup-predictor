@@ -19,11 +19,13 @@ class MatchCard extends StatefulWidget {
     required this.match,
     this.prediction,
     required this.onSave,
+    this.onViewPredictions,
   });
 
   final Match match;
   final Prediction? prediction;
   final Future<void> Function(int home, int away) onSave;
+  final VoidCallback? onViewPredictions;
 
   @override
   State<MatchCard> createState() => _MatchCardState();
@@ -143,7 +145,7 @@ class _MatchCardState extends State<MatchCard> {
               homeScore: _home,
               awayScore: _away,
               open: open,
-              isArab: match.isArabTeamMatch,
+              isSaudi: match.isSaudiMatch,
               kickoff: match.kickoffAt,
               onHome: (v) => setState(() => _home = v),
               onAway: (v) => setState(() => _away = v),
@@ -174,6 +176,20 @@ class _MatchCardState extends State<MatchCard> {
                 ),
               ],
             ),
+            if (widget.onViewPredictions != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: widget.onViewPredictions,
+                icon: const Icon(Icons.groups_outlined, size: 18),
+                label: Text(s.viewPredictions),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.pitchGreen,
+                  side: BorderSide(
+                    color: AppTheme.pitchGreen.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            ],
             if (open) ...[
               const SizedBox(height: 12),
               _StatusLine(
@@ -241,7 +257,7 @@ class _ScoreBug extends StatelessWidget {
     required this.homeScore,
     required this.awayScore,
     required this.open,
-    required this.isArab,
+    required this.isSaudi,
     required this.kickoff,
     required this.onHome,
     required this.onAway,
@@ -252,7 +268,7 @@ class _ScoreBug extends StatelessWidget {
   final int homeScore;
   final int awayScore;
   final bool open;
-  final bool isArab;
+  final bool isSaudi;
   final DateTime kickoff;
   final ValueChanged<int> onHome;
   final ValueChanged<int> onAway;
@@ -296,7 +312,7 @@ class _ScoreBug extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _ClockTab(kickoff: kickoff, open: open),
-                if (isArab) ...[
+                if (isSaudi) ...[
                   const SizedBox(width: 8),
                   const _DoubleBadge(),
                 ],

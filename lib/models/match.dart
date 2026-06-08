@@ -27,6 +27,9 @@ class Match {
   final int? homeScore;
   final int? awayScore;
   final bool isArabTeamMatch;
+
+  /// Saudi Arabia plays in this match (double points). DB: `is_arab_team_match`.
+  bool get isSaudiMatch => isArabTeamMatch;
   final MatchStatus status;
 
   bool get isFinished => status == MatchStatus.finished;

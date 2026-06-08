@@ -9,7 +9,7 @@ void main() {
         predictedAway: 1,
         actualHome: 2,
         actualAway: 1,
-        isArabMatch: false,
+        isSaudiMatch: false,
       ),
       3,
     );

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
 import 'package:world_cup_predictor/models/match.dart';
+import 'package:world_cup_predictor/models/match_prediction_entry.dart';
 import 'package:world_cup_predictor/models/my_stats.dart';
 import 'package:world_cup_predictor/models/prediction.dart';
 import 'package:world_cup_predictor/models/profile.dart';
@@ -35,6 +36,11 @@ final currentProfileProvider = FutureProvider<Profile?>((ref) async {
 
 final upcomingMatchesProvider = FutureProvider<List<Match>>((ref) async {
   return ref.watch(matchServiceProvider).fetchUpcomingMatches();
+});
+
+final matchPredictionsProvider = FutureProvider.autoDispose
+    .family<List<MatchPredictionEntry>, String>((ref, matchId) {
+  return ref.watch(matchServiceProvider).fetchMatchPredictionsWithProfiles(matchId);
 });
 
 final myPredictionsProvider =

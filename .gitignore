@@ -41,3 +41,6 @@ app.*.map.json
 .env
 env.json
 lib/core/config/supabase_config.dart
+
+# Archives / local deploy bundles
+*.zip
