@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -44,9 +45,7 @@ class _MatchCardState extends State<MatchCard> {
     super.initState();
     _home = widget.prediction?.homeScore ?? 0;
     _away = widget.prediction?.awayScore ?? 0;
-    // Coarse ticker only to refresh open/closed state — the live countdown
-    // runs in its own _ClockTab widget, so the card doesn't rebuild every second.
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -133,17 +132,37 @@ class _MatchCardState extends State<MatchCard> {
       nameAr: match.awayTeam,
       nameEn: match.awayTeamEn,
     );
-    final nameStyle = Theme.of(context)
-        .textTheme
-        .bodyMedium
-        ?.copyWith(fontWeight: FontWeight.w700);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      color: const Color(0x99152A3D),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
-        child: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.14),
+                  Colors.white.withValues(alpha: 0.05),
+                ],
+              ),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.22),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _ScoreBug(
@@ -158,35 +177,13 @@ class _MatchCardState extends State<MatchCard> {
               onAway: (v) => setState(() => _away = v),
             ),
             const SizedBox(height: 14),
-            Directionality(
-              textDirection: TextDirection.ltr,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      s.ar ? home.nameAr : home.nameEn,
-                      textAlign: TextAlign.end,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: nameStyle,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Text('×', style: nameStyle),
-                  ),
-                  Flexible(
-                    child: Text(
-                      s.ar ? away.nameAr : away.nameEn,
-                      textAlign: TextAlign.start,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: nameStyle,
-                    ),
-                  ),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${home.nameEn}  ×  ${away.nameEn}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700)),
+              ],
             ),
             const SizedBox(height: 2),
             Row(
@@ -230,6 +227,8 @@ class _MatchCardState extends State<MatchCard> {
               _ClosedSummary(match: match, prediction: widget.prediction),
             ],
           ],
+            ),
+          ),
         ),
       ),
     );
@@ -299,7 +298,8 @@ class _ScoreBug extends StatelessWidget {
   final ValueChanged<int> onHome;
   final ValueChanged<int> onAway;
 
-  static const _scoreBg = Color(0x00000000); // transparent on white glass
+  static const _scoreBg = Color(0xFF0E2A1E);
+  static const _codeBg = Color(0xFF0C0C0C);
 
   @override
   Widget build(BuildContext context) {
@@ -308,60 +308,64 @@ class _ScoreBug extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Column(
         children: [
-          Material(
-            color: Colors.transparent,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xE6152A3D),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0x33FFFFFF)),
-                ),
-                child: SizedBox(
-                  height: 70,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(width: 5, color: _jerseyColor(home)),
-                      Expanded(child: _flag(home)),
-                      _scoreCell(homeScore, onHome, 'h'),
-                      const _Wc26Badge(),
-                      _scoreCell(awayScore, onAway, 'a'),
-                      Expanded(child: _flag(away)),
-                      Container(width: 5, color: _jerseyColor(away)),
-                    ],
+          // Score bug with the double-points badge floating above the SA flag.
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
+                    height: 70,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(width: 5, color: _jerseyColor(home)),
+                        Expanded(child: _flag(home)),
+                        _scoreCell(homeScore, onHome, 'h'),
+                        const _Wc26Badge(),
+                        _scoreCell(awayScore, onAway, 'a'),
+                        Expanded(child: _flag(away)),
+                        Container(width: 5, color: _jerseyColor(away)),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (isSaudi)
+                Positioned(
+                  // Float the badge above the Saudi flag side of the bug.
+                  top: -16,
+                  // SA on the LEFT (home) → badge on the left quarter,
+                  // SA on the RIGHT (away) → badge on the right quarter.
+                  left: home.code.toUpperCase() == 'SA' ? 24 : null,
+                  right: home.code.toUpperCase() == 'SA' ? null : 24,
+                  child: const _DoubleBadge(),
+                ),
+            ],
           ),
           Transform.translate(
             offset: const Offset(0, -1),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _ClockTab(kickoff: kickoff),
-                if (isSaudi) ...[
-                  const SizedBox(width: 8),
-                  const _DoubleBadge(),
-                ],
-              ],
-            ),
+            child: _ClockTab(kickoff: kickoff, open: open),
           ),
         ],
       ),
     );
   }
 
-  Widget _flag(TeamInfo t) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
+  Widget _flag(TeamInfo t) => Container(
+        color: _codeBg,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        alignment: Alignment.center,
         child: t.flagUrl.isEmpty
-            ? const Center(
-                child: Icon(Icons.flag, color: Colors.white24, size: 22))
-            : CachedNetworkImage(
-                imageUrl: t.flagUrl,
-                fit: BoxFit.contain,
+            ? const Icon(Icons.flag, color: Colors.white24, size: 28)
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: CachedNetworkImage(
+                  imageUrl: t.flagUrl,
+                  fit: BoxFit.contain,
+                ),
               ),
       );
 
@@ -404,8 +408,7 @@ class _ScoreBug extends StatelessWidget {
         child: SizedBox(
           height: 20,
           child: Icon(icon,
-              size: 18,
-              color: onTap == null ? Colors.white24 : Colors.white),
+              size: 18, color: onTap == null ? Colors.white24 : Colors.white),
         ),
       );
 }
@@ -425,38 +428,15 @@ class _Wc26Badge extends StatelessWidget {
 }
 
 /// The green clock tab hanging under the bug — shows the live countdown.
-/// Has its own 1s ticker so only this tiny widget rebuilds each second
-/// (not the whole match card) — keeps scrolling smooth.
-class _ClockTab extends StatefulWidget {
-  const _ClockTab({required this.kickoff});
+class _ClockTab extends StatelessWidget {
+  const _ClockTab({required this.kickoff, required this.open});
 
   final DateTime kickoff;
-
-  @override
-  State<_ClockTab> createState() => _ClockTabState();
-}
-
-class _ClockTabState extends State<_ClockTab> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  final bool open;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final open = isPredictionOpen(widget.kickoff);
     if (!open) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -479,44 +459,94 @@ class _ClockTabState extends State<_ClockTab> {
       );
     }
 
-    final d = timeUntilPredictionCloses(widget.kickoff);
+    final d = timeUntilPredictionCloses(kickoff);
     final days = d.inDays;
-    final hh = d.inHours.remainder(24).toString().padLeft(2, '0');
-    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    const numStyle = TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w900,
-      fontSize: 17,
-      letterSpacing: 1,
-    );
+    final hours = d.inHours.remainder(24);
+    final mins = d.inMinutes.remainder(60);
+    final secs = d.inSeconds.remainder(60);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0E9F5B),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-      ),
-      // Separate widgets (not one bidi string) so "3 يوم 22:09:00" reads right.
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.timer_outlined, color: Colors.white, size: 15),
-          const SizedBox(width: 6),
-          if (days > 0) ...[
-            Text('$days', style: numStyle),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Text(s.dayUnit,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12)),
+    // FIFA-style flip boxes inside a glassy navy tray that matches the site.
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(12),
             ),
-          ],
-          Text('$hh:$mm:$ss', style: numStyle),
-        ],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF2766FF).withValues(alpha: 0.18),
+                Colors.white.withValues(alpha: 0.04),
+              ],
+            ),
+            border: Border.all(
+              color: const Color(0xFF2766FF).withValues(alpha: 0.30),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _flipUnit(days, 'DAYS'),
+              const SizedBox(width: 4),
+              _flipUnit(hours, 'HRS'),
+              const SizedBox(width: 4),
+              _flipUnit(mins, 'MIN'),
+              const SizedBox(width: 4),
+              _flipUnit(secs, 'SEC'),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _flipUnit(int value, String label) {
+    final text = value.toString().padLeft(2, '0');
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 30,
+          height: 26,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1B0A0F), Color(0xFF120709)],
+            ),
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(
+              color: const Color(0xFFE23B5A).withValues(alpha: 0.30),
+            ),
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFFE23B5A),
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+              height: 1.0,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontWeight: FontWeight.w700,
+            fontSize: 7,
+            letterSpacing: 0.7,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -588,20 +618,36 @@ class _DoubleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppTheme.arabBadgeOrange.withValues(alpha: 0.50),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.arabBadgeOrange.withValues(alpha: 0.55),
+            blurRadius: 14,
+            spreadRadius: -2,
+          ),
+        ],
       ),
       child: Text(
         S.of(context).doubleBadge,
         style: const TextStyle(
           color: AppTheme.arabBadgeOrange,
           fontWeight: FontWeight.w900,
-          fontSize: 13,
+          fontSize: 11,
         ),
       ),
-    );
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .scaleXY(begin: 1.0, end: 1.08, duration: 700.ms, curve: Curves.easeInOut)
+        .shimmer(
+          duration: 1600.ms,
+          color: const Color(0xFFFFD27A),
+        );
   }
 }
 

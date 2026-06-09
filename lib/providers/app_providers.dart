@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
@@ -12,6 +13,15 @@ import 'package:world_cup_predictor/services/match_service.dart';
 final supabaseClientProvider = Provider<SupabaseClient>(
   (ref) => Supabase.instance.client,
 );
+
+/// Dashboard hero collapse progress: 0 = full-screen clip, 1 = fully collapsed.
+/// The dashboard updates it on scroll; the top nav bar shows the mini "26"
+/// clip in its centre as it approaches 1.
+final heroCollapseProvider = Provider<ValueNotifier<double>>((ref) {
+  final notifier = ValueNotifier<double>(0.0);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
 
 final authServiceProvider = Provider(
   (ref) => AuthService(ref.watch(supabaseClientProvider)),

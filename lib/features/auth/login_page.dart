@@ -102,6 +102,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Directionality(
       textDirection: s.ar ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
+        backgroundColor: Colors.black,
         body: Stack(
           children: [
             SafeArea(
@@ -110,7 +111,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
-                    child: Column(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                      decoration: BoxDecoration(
+                        color: const Color(0xE60B1118),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF14E3B4).withValues(alpha: 0.30),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF14E3B4).withValues(alpha: 0.12),
+                            blurRadius: 40,
+                            spreadRadius: -6,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            blurRadius: 32,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
+                      ),
+                      child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AuthBrandHeader(
@@ -196,6 +218,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF14E3B4),
+                        foregroundColor: const Color(0xFF05070B),
+                        minimumSize: const Size.fromHeight(50),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
@@ -219,6 +253,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                      ),
                     ),
                   ),
                 ),

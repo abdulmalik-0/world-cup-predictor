@@ -18,6 +18,9 @@ dependencies:
   cached_network_image: ^3.4.1
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.2
+  video_player: ^2.9.2
+  path_drawing: ^1.0.1
+  flutter_svg: ^2.0.10
 
 dev_dependencies:
   flutter_test:
@@ -30,4 +33,9 @@ flutter:
     - assets/images/wc26_logo.png
     - assets/images/fifa-world-cup-2026--white.png
     - assets/images/background.png
-    - assets/images/background1.jpeg
+    - assets/images/hero_poster.webp
+    - assets/images/trophy.png
+    - assets/images/malaz_logo.svg
+    - assets/images/wc_action.webp
+    - assets/images/gallery1.webp
+    - assets/video/hero.mp4

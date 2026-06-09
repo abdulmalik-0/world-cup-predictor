@@ -1,9 +1,14 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:video_player/video_player.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
 import 'package:world_cup_predictor/core/widgets/grab_scroll.dart';
+import 'package:world_cup_predictor/core/widgets/hero_video_banner.dart';
 import 'package:world_cup_predictor/core/widgets/match_day_header.dart';
 import 'package:world_cup_predictor/core/widgets/scoring_rules_card.dart';
 import 'package:world_cup_predictor/features/dashboard/widgets/match_card.dart';
@@ -18,12 +23,114 @@ class DashboardPage extends ConsumerStatefulWidget {
   ConsumerState<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends ConsumerState<DashboardPage> {
+class _DashboardPageState extends ConsumerState<DashboardPage>
+    with SingleTickerProviderStateMixin {
   /// `null` = all days; otherwise `yyyy-MM-dd`.
   String? _selectedDayKey;
 
-  /// How many matches are rendered at once (paged in 20s for smooth scroll).
-  int _visibleCount = 20;
+  final ScrollController _scroll = ScrollController();
+  VideoPlayerController? _heroVideo;
+  bool _heroReady = false;
+  double _heroMax = 1.0;
+
+  // Smooth (inertia/lerp) scrolling for mouse wheel + trackpad.
+  Ticker? _smoothTicker;
+  double _smoothTarget = 0.0;
+
+  // Cached reference so dispose / scroll listener never touch `ref` (which is
+  // illegal after the element becomes inactive, e.g. when locale changes).
+  ValueNotifier<double>? _heroCollapse;
+
+  @override
+  void initState() {
+    super.initState();
+    _heroCollapse = ref.read(heroCollapseProvider);
+    _initHeroVideo();
+    _scroll.addListener(_onScroll);
+    _smoothTicker = createTicker(_onSmoothTick);
+  }
+
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent || !_scroll.hasClients) return;
+    final max = _scroll.position.maxScrollExtent;
+    final base = (_smoothTicker?.isActive ?? false)
+        ? _smoothTarget
+        : _scroll.offset;
+    _smoothTarget = (base + event.scrollDelta.dy).clamp(0.0, max);
+    if (!(_smoothTicker?.isActive ?? false)) _smoothTicker?.start();
+  }
+
+  void _onSmoothTick(Duration _) {
+    if (!_scroll.hasClients) {
+      _smoothTicker?.stop();
+      return;
+    }
+    final max = _scroll.position.maxScrollExtent;
+    _smoothTarget = _smoothTarget.clamp(0.0, max);
+    final cur = _scroll.offset;
+    final diff = _smoothTarget - cur;
+    if (diff.abs() < 0.4) {
+      _scroll.jumpTo(_smoothTarget);
+      _smoothTicker?.stop();
+      return;
+    }
+    // Ease toward the target — lower factor = smoother/slower glide.
+    _scroll.jumpTo(cur + diff * 0.16);
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final p = (_scroll.offset / _heroMax).clamp(0.0, 1.0);
+    _heroCollapse?.value = p;
+  }
+
+  Future<void> _initHeroVideo() async {
+    final c = VideoPlayerController.asset('assets/video/hero.mp4');
+    _heroVideo = c;
+    try {
+      await c.initialize();
+      await c.setLooping(true);
+      await c.setVolume(0);
+      await c.play();
+      // Loop safety net: some web builds don't honour setLooping — restart
+      // the clip when it reaches the end without looping.
+      c.addListener(() {
+        final v = c.value;
+        if (v.isInitialized &&
+            !v.isPlaying &&
+            v.duration > Duration.zero &&
+            v.position >= v.duration - const Duration(milliseconds: 250)) {
+          c.seekTo(Duration.zero);
+          c.play();
+        }
+      });
+      if (mounted) setState(() => _heroReady = true);
+    } catch (_) {
+      // Keep the poster fallback if the video can't play.
+    }
+  }
+
+  void _onPointerDrag(double dy) {
+    if (!_scroll.hasClients || dy == 0) return;
+    _smoothTicker?.stop();
+    final max = _scroll.position.maxScrollExtent;
+    final o = (_scroll.offset - dy).clamp(0.0, max);
+    _scroll.jumpTo(o);
+    _smoothTarget = o;
+  }
+
+  @override
+  void dispose() {
+    _smoothTicker?.dispose();
+    _scroll.removeListener(_onScroll);
+    // Reset so other pages' nav bar doesn't show the clip. Uses the cached
+    // notifier directly — do NOT call `ref.read` here (the element is already
+    // inactive during dispose, which would assert in framework).
+    _heroCollapse?.value = 0.0;
+    _scroll.dispose();
+    _heroVideo?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +150,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           final predictions = predictionsAsync.valueOrNull ?? {};
           final s = S.of(context);
           final lang = Localizations.localeOf(context).languageCode;
+
+          // Soonest upcoming match (matches are sorted by kickoff ascending).
+          final now = DateTime.now();
+          Match? nextMatch;
+          for (final m in matches) {
+            if (m.kickoffAt.isAfter(now)) {
+              nextMatch = m;
+              break;
+            }
+          }
+          final nextTitle = nextMatch == null
+              ? null
+              : '${nextMatch.homeTeamEn ?? nextMatch.homeTeam} × ${nextMatch.awayTeamEn ?? nextMatch.awayTeam}';
 
           if (matches.isEmpty) {
             return GrabScrollListView(
@@ -72,12 +192,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   .where((m) => dayFmt.format(m.kickoffAt) == _selectedDayKey)
                   .toList();
 
-          // Page the list so only a limited number of cards render at once.
-          final visible = filtered.take(_visibleCount).toList();
-
           final showDayHeaders = _selectedDayKey == null;
           final children = <Widget>[];
           String? lastDay;
+          var animIndex = 0;
 
           if (filtered.isEmpty) {
             children.add(
@@ -87,7 +205,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
             );
           } else {
-            for (final match in visible) {
+            for (final match in filtered) {
               final dayKey = dayFmt.format(match.kickoffAt);
               if (showDayHeaders && dayKey != lastDay) {
                 lastDay = dayKey;
@@ -95,12 +213,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     .where((m) => dayFmt.format(m.kickoffAt) == dayKey)
                     .length;
                 children.add(
-                  MatchDayHeader(date: match.kickoffAt, count: count),
+                  MatchDayHeader(date: match.kickoffAt, count: count)
+                      .animate()
+                      .fadeIn(delay: (animIndex * 50).ms, duration: 300.ms),
                 );
               }
               children.add(
-                RepaintBoundary(
-                  child: MatchCard(
+                MatchCard(
                   match: match,
                   prediction: predictions[match.id],
                   onViewPredictions: () => showMatchPredictionsSheet(
@@ -121,60 +240,114 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     );
                     ref.invalidate(myPredictionsProvider);
                   },
-                ),
-                ),
+                )
+                    .animate()
+                    .fadeIn(delay: (animIndex * 50).ms, duration: 320.ms)
+                    .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
               );
+              animIndex++;
             }
           }
 
-          if (filtered.length > visible.length) {
-            children.add(
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: OutlinedButton.icon(
-                  onPressed: () => setState(() => _visibleCount += 20),
-                  icon: const Icon(Icons.expand_more),
-                  label: Text(
-                    s.ar
-                        ? 'عرض المزيد (${filtered.length - visible.length})'
-                        : 'Show more (${filtered.length - visible.length})',
+          final listItems = <Widget>[
+            if (nextMatch != null) ...[
+              MatchCountdownBar(
+                kickoff: nextMatch.kickoffAt,
+                title: nextTitle,
+              )
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+              const SizedBox(height: 18),
+            ],
+            const ScoringRulesCard(),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                const Text('🏆', style: TextStyle(fontSize: 24))
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scaleXY(begin: 1.0, end: 1.18, duration: 900.ms, curve: Curves.easeInOut)
+                    .rotate(begin: -0.04, end: 0.04, duration: 900.ms),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    s.upcomingMatches,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
-              ),
-            );
-          }
+              ],
+            )
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideX(begin: 0.12, end: 0, curve: Curves.easeOut)
+                .then()
+                .shimmer(duration: 1400.ms, color: const Color(0xFFE8B23A)),
+            const SizedBox(height: 8),
+            Text(
+              s.predictionHint,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            _DayFilterBar(
+              days: days,
+              selectedKey: _selectedDayKey,
+              allDaysLabel: s.allDays,
+              lang: lang,
+              onSelected: (key) => setState(() => _selectedDayKey = key),
+            ),
+            const SizedBox(height: 8),
+            ...children,
+            const SizedBox(height: 24),
+          ];
 
-          return GrabScrollListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                s.upcomingMatches,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const ScoringRulesCard(),
-              const SizedBox(height: 12),
-              Text(
-                s.predictionHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              _DayFilterBar(
-                days: days,
-                selectedKey: _selectedDayKey,
-                allDaysLabel: s.allDays,
-                lang: lang,
-                onSelected: (key) => setState(() {
-                  _selectedDayKey = key;
-                  _visibleCount = 20;
-                }),
-              ),
-              const SizedBox(height: 8),
-              ...children,
-            ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Hero fills the WHOLE screen at the top, then collapses away as
+              // you scroll (handing the "26" off to the top nav bar).
+              final heroMax = constraints.maxHeight.clamp(360.0, 2000.0);
+              _heroMax = heroMax;
+              // Keep the content column centered at ~680 while the hero is
+              // full-width.
+              final contentPad =
+                  ((constraints.maxWidth - 680) / 2).clamp(16.0, 600.0);
+
+              return ScrollConfiguration(
+                behavior: const GrabScrollBehavior(),
+                child: Listener(
+                  onPointerSignal: _onPointerSignal,
+                  onPointerMove: (event) {
+                    if (event.buttons == 0) return;
+                    _onPointerDrag(event.delta.dy);
+                  },
+                  child: CustomScrollView(
+                    controller: _scroll,
+                    // Scrolling is driven manually (smooth lerp + grab drag).
+                    physics: const NeverScrollableScrollPhysics(),
+                    slivers: [
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: WcHeroDelegate(
+                          controller: _heroVideo,
+                          ready: _heroReady,
+                          maxH: heroMax,
+                          minH: 0,
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                            contentPad, 16, contentPad, 16),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate(listItems),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       ),

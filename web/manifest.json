@@ -1,11 +1,12 @@
-{
-    "name": "تحدي مونديال الشركة",
-    "short_name": "مونديال الشركة",
+﻿{
+    "name": "Malaz World Cup Arena",
+    "short_name": "Malaz World Cup",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0D1B2A",
-    "theme_color": "#006847",
-    "description": "Company World Cup Predictor",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "Malaz World Cup Arena",
     "orientation": "portrait-primary",
     "prefer_related_applications": false
 }
+

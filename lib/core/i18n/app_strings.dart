@@ -25,14 +25,14 @@ class S {
   String _p(String arText, String enText) => ar ? arText : enText;
 
   // ── Shell / general ─────────────────────────────────────────
-  String get appName => _p('تحدي مونديال الشركة', 'Company World Cup');
+  String get appName => _p('Malaz World Cup Arena', 'Malaz World Cup Arena');
   String get matches => _p('المباريات', 'Matches');
-  String get standings => _p('الترتيب', 'Standings');
+  String get standings => _p('الترتيب', 'Leaderboard');
   String get myStats => _p('إحصائياتي', 'My Stats');
   String get adminPanel => _p('لوحة التحكم', 'Admin Panel');
   String get signOut => _p('تسجيل الخروج', 'Sign out');
   // The button shows the language you'll switch TO.
-  String get switchLanguageLabel => _p('English', 'عربي');
+  String get switchLanguageLabel => _p('Eng', 'عربي');
 
   // ── Dashboard ───────────────────────────────────────────────
   String get upcomingMatches => _p('المباريات القادمة', 'Upcoming Matches');
@@ -47,8 +47,8 @@ class S {
       _p('فوز أو تعادل صحيح = 1 نقطة', 'Correct winner or draw = 1 point');
   String get scoringRulesWrong => _p('توقع خاطئ = 0', 'Wrong pick = 0');
   String get scoringRulesSaudi => _p(
-        'مباريات المنتخب السعودي 🔥: دقيقة = ٦ نقاط، صحيحة = نقطتان',
-        'Saudi Arabia matches 🔥: exact = 6 pts, correct = 2 pts',
+        'مباريات المنتخب السعودي = دبل نقاط 🔥',
+        'Saudi Arabia matches = double points 🔥',
       );
   String get scoringRulesLock => _p(
         'يُغلق التوقع قبل صافرة البداية بساعة',
@@ -92,7 +92,7 @@ class S {
         'Could not load picks',
       );
   String points(int n) => _p('+$n نقطة', '+$n pts');
-  String get doubleBadge => _p('دبل السعودية 🔥', 'Saudi double 🔥');
+  String get doubleBadge => _p('دبل نقاط 🔥', 'Double points 🔥');
   String get errWindow =>
       _p('انتهى وقت التوقع لهذه المباراة', 'Prediction window has closed');
   String get errRls => _p(
@@ -130,7 +130,10 @@ class S {
   String get wrongBadge => _p('خطأ', 'Wrong');
 
   // ── Login ───────────────────────────────────────────────────
-  String get registerSubtitle => _p('أنشئ حسابك من البداية', 'Create your account');
+  String get registerSubtitle => _p(
+        'ساحة التوقعات.. سجّل وخلنا نشوف حظّك أو حنكتك!',
+        "The prediction arena.. sign up and let's see your luck or skill!",
+      );
   String get loginSubtitle =>
       _p('سجّل دخولك بالإيميل وكلمة المرور', 'Sign in with email & password');
   String get fullName => _p('الاسم الكامل', 'Full name');
