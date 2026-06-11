@@ -1,3 +1,5 @@
+import 'package:world_cup_predictor/core/utils/saudi_time.dart';
+
 enum MatchStatus { scheduled, live, finished, cancelled }
 
 class Match {
@@ -43,7 +45,9 @@ class Match {
       awayTeamEn: json['away_team_en'] as String?,
       homeTeamCode: json['home_team_code'] as String,
       awayTeamCode: json['away_team_code'] as String,
-      kickoffAt: DateTime.parse(json['kickoff_at'] as String).toLocal(),
+      // Shown and compared in Saudi time (UTC+3) - see core/utils/saudi_time.dart
+      kickoffAt:
+          DateTime.parse(json['kickoff_at'] as String).toUtc().add(saudiOffset),
       homeScore: json['home_score'] as int?,
       awayScore: json['away_score'] as int?,
       isArabTeamMatch: json['is_arab_team_match'] as bool? ?? false,

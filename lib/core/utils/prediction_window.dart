@@ -1,14 +1,15 @@
 import 'package:world_cup_predictor/core/constants/app_constants.dart';
+import 'package:world_cup_predictor/core/utils/saudi_time.dart';
 
 DateTime predictionClosesAt(DateTime kickoff) =>
     kickoff.subtract(const Duration(minutes: predictionLockMinutes));
 
 bool isPredictionOpen(DateTime kickoff) =>
-    DateTime.now().isBefore(predictionClosesAt(kickoff));
+    nowInSaudi().isBefore(predictionClosesAt(kickoff));
 
 Duration timeUntilPredictionCloses(DateTime kickoff) {
   final closes = predictionClosesAt(kickoff);
-  final now = DateTime.now();
+  final now = nowInSaudi();
   if (!now.isBefore(closes)) return Duration.zero;
   return closes.difference(now);
 }

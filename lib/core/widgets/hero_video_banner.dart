@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
 import 'package:video_player/video_player.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
+import 'package:world_cup_predictor/core/utils/saudi_time.dart';
 import 'package:world_cup_predictor/core/widgets/wc_mask_paths.dart';
 
 /// FIFA-NYNJ hero: the looping video is revealed only inside the World Cup
@@ -240,7 +241,7 @@ class _MatchCountdownBarState extends State<MatchCountdownBar> {
   }
 
   void _tick() {
-    final r = widget.kickoff.difference(DateTime.now());
+    final r = widget.kickoff.difference(nowInSaudi());
     if (mounted) setState(() => _remaining = r);
   }
 

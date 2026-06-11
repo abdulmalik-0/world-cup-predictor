@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:world_cup_predictor/core/utils/saudi_time.dart';
 import 'package:video_player/video_player.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
@@ -152,7 +153,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           final lang = Localizations.localeOf(context).languageCode;
 
           // Soonest upcoming match (matches are sorted by kickoff ascending).
-          final now = DateTime.now();
+          final now = nowInSaudi();
           Match? nextMatch;
           for (final m in matches) {
             if (m.kickoffAt.isAfter(now)) {
