@@ -1,22 +1,21 @@
-// Supabase Edge Function: sync-results
+// Supabase Edge Function: sync-results  (ESPN source — no API key needed)
 // ---------------------------------------------------------------------------
-// Syncs FIFA World Cup matches from football-data.org (competition WC only).
-// One API call fetches all WC fixtures; local rows are matched by external_ref
-// or by home/away team codes + kickoff time, then scores/status are updated.
+// Syncs FIFA World Cup 2026 results from ESPN's public scoreboard.
+// One call fetches every WC fixture; local rows are matched by TEAM-CODE PAIR
+// (the app schedule uses real fixtures but placeholder kickoff times, so we do
+// NOT match on time). For each linked row we also correct kickoff_at to the
+// real time, then write scores/status when the match goes live/final.
 //
-// Secrets (Supabase Dashboard → Edge Functions → Secrets):
-//   FOOTBALL_API_KEY
-//   FOOTBALL_COMPETITION_CODE=WC   (default)
-//   FOOTBALL_SEASON=2026           (default)
+// Scores are assigned per TEAM (not per home/away slot), so a reversed
+// home/away in the source still lands on the right side locally.
 //
-// Deploy:
-//   supabase functions deploy sync-results
+// No secrets required. Deploy:  supabase functions deploy sync-results
 // ---------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-/** football-data.org TLA → app team codes (single file for Dashboard deploy). */
-const TLA_TO_CODE: Record<string, string> = {
+/** ESPN 3-letter abbreviation -> app 2-letter team code. */
+const ABBR_TO_CODE: Record<string, string> = {
   MEX: "MX", RSA: "ZA", KOR: "KR", CZE: "CZ", CAN: "CA", USA: "US", PAR: "PY",
   QAT: "QA", SUI: "CH", BRA: "BR", MAR: "MA", SCO: "SF", HAI: "HT", AUS: "AU",
   TUR: "TR", GER: "DE", CUW: "CW", NED: "NL", JPN: "JP", CIV: "CI", ECU: "EC",
@@ -26,29 +25,23 @@ const TLA_TO_CODE: Record<string, string> = {
   CRO: "HR", GHA: "GH", PAN: "PA", UZB: "UZ", COL: "CO", BIH: "BA",
 };
 
-function tlaToCode(tla: string | null | undefined): string | null {
-  if (!tla) return null;
-  const key = tla.toUpperCase();
-  return TLA_TO_CODE[key] ?? key.slice(0, 2);
-}
-
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const API_KEY = Deno.env.get("FOOTBALL_API_KEY") ?? "";
-const API_BASE = Deno.env.get("FOOTBALL_API_BASE") ??
-  "https://api.football-data.org/v4";
-const COMPETITION = Deno.env.get("FOOTBALL_COMPETITION_CODE") ?? "WC";
-const SEASON = Deno.env.get("FOOTBALL_SEASON") ?? "2026";
+const ESPN_BASE = Deno.env.get("ESPN_SCOREBOARD_URL") ??
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+// WC 2026 runs 2026-06-11 .. 2026-07-19 — one range fetch covers the tournament.
+const ESPN_DATES = Deno.env.get("ESPN_DATES") ?? "20260611-20260719";
 
-const KICKOFF_TOLERANCE_MS = 3 * 60 * 60 * 1000;
-
-interface ApiMatch {
-  id: number;
-  utcDate: string;
-  status: string;
-  homeTeam: { tla?: string };
-  awayTeam: { tla?: string };
-  score?: { fullTime?: { home?: number | null; away?: number | null } };
+interface EspnCompetitor {
+  homeAway: string;
+  score: string | null;
+  team: { abbreviation?: string };
+}
+interface EspnEvent {
+  id: string;
+  date: string;
+  status: { type: { state: string; completed: boolean } };
+  competitions: { competitors: EspnCompetitor[] }[];
 }
 
 interface LocalMatch {
@@ -60,160 +53,111 @@ interface LocalMatch {
   status: string;
 }
 
-function mapApiStatus(status: string): "scheduled" | "live" | "finished" | "cancelled" | null {
-  switch (status) {
-    case "FINISHED":
-      return "finished";
-    case "IN_PLAY":
-    case "PAUSED":
-    case "LIVE":
-      return "live";
-    case "SCHEDULED":
-    case "TIMED":
-      return "scheduled";
-    case "POSTPONED":
-    case "SUSPENDED":
-    case "CANCELLED":
-      return "cancelled";
-    default:
-      return null;
-  }
+function codeOf(abbr: string | undefined | null): string | null {
+  if (!abbr) return null;
+  return ABBR_TO_CODE[abbr.toUpperCase()] ?? null; // null => placeholder/unknown
 }
 
-function pairKey(home: string, away: string): string {
-  return `${home}|${away}`;
+function pairKey(a: string, b: string): string {
+  return [a, b].sort().join("|");
 }
 
-function apiPairKey(m: ApiMatch): string | null {
-  const home = tlaToCode(m.homeTeam?.tla);
-  const away = tlaToCode(m.awayTeam?.tla);
-  if (!home || !away) return null;
-  return pairKey(home, away);
+function mapState(
+  state: string,
+  completed: boolean,
+): "scheduled" | "live" | "finished" | null {
+  if (completed || state === "post") return "finished";
+  if (state === "in") return "live";
+  if (state === "pre") return "scheduled";
+  return null;
 }
 
-async function fetchWorldCupMatches(): Promise<ApiMatch[]> {
-  if (!API_KEY) {
-    throw new Error("FOOTBALL_API_KEY is not set");
-  }
-
-  const url =
-    `${API_BASE}/competitions/${COMPETITION}/matches?season=${SEASON}`;
-  const res = await fetch(url, {
-    headers: { "X-Auth-Token": API_KEY },
-  });
-
+async function fetchEspnEvents(): Promise<EspnEvent[]> {
+  const url = `${ESPN_BASE}?dates=${ESPN_DATES}&limit=400`;
+  const res = await fetch(url);
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`football-data.org ${res.status}: ${body}`);
+    throw new Error(`ESPN ${res.status}: ${await res.text()}`);
   }
-
   const data = await res.json();
-  return (data?.matches ?? []) as ApiMatch[];
-}
-
-function findApiMatch(
-  local: LocalMatch,
-  byExternalRef: Map<string, ApiMatch>,
-  byPairAndTime: ApiMatch[],
-): ApiMatch | null {
-  if (local.external_ref) {
-    const hit = byExternalRef.get(local.external_ref);
-    if (hit) return hit;
-  }
-
-  const localKickoff = new Date(local.kickoff_at).getTime();
-  const key = pairKey(local.home_team_code, local.away_team_code);
-
-  let best: ApiMatch | null = null;
-  let bestDelta = Infinity;
-
-  for (const api of byPairAndTime) {
-    if (apiPairKey(api) !== key) continue;
-    const delta = Math.abs(new Date(api.utcDate).getTime() - localKickoff);
-    if (delta <= KICKOFF_TOLERANCE_MS && delta < bestDelta) {
-      best = api;
-      bestDelta = delta;
-    }
-  }
-
-  return best;
+  return (data?.events ?? []) as EspnEvent[];
 }
 
 Deno.serve(async () => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-  let apiMatches: ApiMatch[];
+  let events: EspnEvent[];
   try {
-    apiMatches = await fetchWorldCupMatches();
+    events = await fetchEspnEvents();
   } catch (e) {
-    return new Response(
-      JSON.stringify({
-        error: e instanceof Error ? e.message : String(e),
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return json({ error: e instanceof Error ? e.message : String(e) }, 500);
   }
 
-  const byExternalRef = new Map<string, ApiMatch>();
-  for (const m of apiMatches) {
-    byExternalRef.set(String(m.id), m);
+  // Index source events by id and by unordered team-code pair.
+  const byId = new Map<string, EspnEvent>();
+  const byPair = new Map<string, EspnEvent>();
+  for (const ev of events) {
+    byId.set(String(ev.id), ev);
+    const comp = ev.competitions?.[0];
+    const a = codeOf(comp?.competitors?.[0]?.team?.abbreviation);
+    const b = codeOf(comp?.competitors?.[1]?.team?.abbreviation);
+    if (a && b) byPair.set(pairKey(a, b), ev); // real-team fixtures only
   }
 
-  const { data: localMatches, error } = await supabase
+  const { data: locals, error } = await supabase
     .from("matches")
     .select(
       "id, external_ref, home_team_code, away_team_code, kickoff_at, status",
     )
     .neq("status", "finished");
 
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  if (error) return json({ error: error.message }, 500);
 
   let linked = 0;
-  let updated = 0;
+  let retimed = 0;
+  let scored = 0;
+  let live = 0;
   const errors: string[] = [];
 
-  for (const local of (localMatches ?? []) as LocalMatch[]) {
-    if (local.home_team_code === "XX" || local.away_team_code === "YY") {
-      continue;
-    }
+  for (const m of (locals ?? []) as LocalMatch[]) {
+    if (m.home_team_code === "XX" || m.away_team_code === "YY") continue; // TBD knockout
 
     try {
-      const api = findApiMatch(local, byExternalRef, apiMatches);
-      if (!api) continue;
+      let ev = m.external_ref ? byId.get(m.external_ref) : undefined;
+      if (!ev) ev = byPair.get(pairKey(m.home_team_code, m.away_team_code));
+      if (!ev) continue;
 
+      const comp = ev.competitions[0];
       const patch: Record<string, unknown> = {};
-      const ref = String(api.id);
 
-      if (!local.external_ref || local.external_ref !== ref) {
-        patch.external_ref = ref;
-        linked++;
+      // Link (store ESPN id for stable future lookups).
+      const ref = String(ev.id);
+      if (m.external_ref !== ref) patch.external_ref = ref;
+
+      // Correct kickoff to the real time.
+      if (ev.date) {
+        const real = new Date(ev.date).toISOString();
+        if (new Date(m.kickoff_at).toISOString() !== real) {
+          patch.kickoff_at = real;
+        }
       }
 
-      const mappedStatus = mapApiStatus(api.status);
-      const ft = api.score?.fullTime ?? {};
+      // Scores assigned per team code (handles reversed home/away).
+      const find = (code: string) =>
+        comp.competitors.find((c) => codeOf(c.team?.abbreviation) === code);
+      const home = find(m.home_team_code);
+      const away = find(m.away_team_code);
+      const st = mapState(ev.status?.type?.state, ev.status?.type?.completed);
 
-      if (
-        mappedStatus === "finished" &&
-        ft.home !== null &&
-        ft.home !== undefined &&
-        ft.away !== null &&
-        ft.away !== undefined
-      ) {
-        patch.home_score = ft.home;
-        patch.away_score = ft.away;
+      const hasScore = (c?: EspnCompetitor) =>
+        c != null && c.score != null && c.score !== "" &&
+        Number.isFinite(Number(c.score));
+
+      if (st === "finished" && hasScore(home) && hasScore(away)) {
+        patch.home_score = Number(home!.score);
+        patch.away_score = Number(away!.score);
         patch.status = "finished";
-        updated++;
-      } else if (mappedStatus === "live" && local.status !== "live") {
+      } else if (st === "live" && m.status !== "live") {
         patch.status = "live";
-        updated++;
-      } else if (mappedStatus === "cancelled" && local.status !== "cancelled") {
-        patch.status = "cancelled";
-        updated++;
       }
 
       if (Object.keys(patch).length === 0) continue;
@@ -221,26 +165,37 @@ Deno.serve(async () => {
       const { error: upErr } = await supabase
         .from("matches")
         .update(patch)
-        .eq("id", local.id);
-
+        .eq("id", m.id);
       if (upErr) {
-        errors.push(`${local.id}: ${upErr.message}`);
+        errors.push(`${m.id}: ${upErr.message}`);
+        continue;
       }
+
+      // Count only changes that actually persisted.
+      if ("external_ref" in patch) linked++;
+      if ("kickoff_at" in patch) retimed++;
+      if (patch.status === "finished") scored++;
+      else if (patch.status === "live") live++;
     } catch (e) {
-      errors.push(`${local.id}: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`${m.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  return new Response(
-    JSON.stringify({
-      competition: COMPETITION,
-      season: SEASON,
-      apiMatches: apiMatches.length,
-      checked: localMatches?.length ?? 0,
-      linked,
-      updated,
-      errors,
-    }),
-    { headers: { "Content-Type": "application/json" } },
-  );
+  return json({
+    source: "espn",
+    events: events.length,
+    checked: locals?.length ?? 0,
+    linked,
+    retimed,
+    scored,
+    live,
+    errors,
+  });
 });
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
