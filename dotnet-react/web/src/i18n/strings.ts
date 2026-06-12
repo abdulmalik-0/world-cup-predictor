@@ -82,16 +82,19 @@ export const STR = {
   change:         { en: 'change',       ar: 'تغيير' },
 
   // Auth / login
-  signInTitle:    { en: 'Sign in to predict',   ar: 'سجّل دخولك للتوقّع' },
-  signUpTitle:    { en: 'Create your account',  ar: 'أنشئ حسابك' },
+  signInSubtitle: { en: 'Sign in with email & password', ar: 'سجّل دخولك بالإيميل وكلمة المرور' },
+  signUpSubtitle: { en: "The prediction arena — sign up and let's see your luck or skill!",
+                    ar: 'حلبة التوقعات — أنشئ حساباً ولنرَ حظّك أو مهارتك!' },
   email:          { en: 'Email',        ar: 'البريد الإلكتروني' },
   password:       { en: 'Password',     ar: 'كلمة المرور' },
+  confirmPassword:{ en: 'Confirm password', ar: 'تأكيد كلمة المرور' },
   fullNameField:  { en: 'Full name',    ar: 'الاسم الكامل' },
   departmentField:{ en: 'Department',   ar: 'القسم' },
-  signInCta:      { en: 'Sign in',      ar: 'دخول' },
-  signUpCta:      { en: 'Create account', ar: 'إنشاء حساب' },
-  noAccount:      { en: "No account? Create one", ar: 'ليس لديك حساب؟ أنشئ واحداً' },
-  haveAccount:    { en: 'Already have an account? Sign in', ar: 'لديك حساب؟ سجّل الدخول' },
+  signInCta:      { en: 'Sign in',      ar: 'تسجيل الدخول' },
+  signUpCtaFull:  { en: 'Create account & start', ar: 'إنشاء حساب والبدء' },
+  firstTime:      { en: 'First time? Create an account', ar: 'أول مرة؟ أنشئ حساباً' },
+  haveAccount:    { en: 'Have an account? Sign in', ar: 'لديك حساب؟ سجّل الدخول' },
+  passwordsMismatch: { en: "Passwords don't match", ar: 'كلمتا المرور غير متطابقتين' },
   authError:      { en: 'Wrong email or password', ar: 'البريد أو كلمة المرور غير صحيحة' },
   signUpDone:     { en: 'Account created — you can sign in now.', ar: 'تم إنشاء الحساب — تقدر تسجّل الدخول الآن.' },
   signUpConfirm:  { en: 'Account created — check your email to confirm.', ar: 'تم إنشاء الحساب — تحقّق من بريدك للتأكيد.' },
@@ -113,8 +116,9 @@ export const STR = {
   predictionsCount:{ en: 'Predictions',         ar: 'عدد التوقعات' },
   accuracy:       { en: 'Accuracy',             ar: 'دقة النتيجة' },
   exactPicks:     { en: 'Exact picks',          ar: 'توقعات دقيقة' },
-  yourRank:       { en: 'Your rank',            ar: 'ترتيبك' },
+  yourRank:       { en: 'Rank',                 ar: 'الترتيب' },
   changeName:     { en: 'Change',               ar: 'تغيير' },
+  selectPlayer:   { en: 'View stats for',       ar: 'عرض إحصائيات' },
 } as const;
 
 export type StrKey = keyof typeof STR;

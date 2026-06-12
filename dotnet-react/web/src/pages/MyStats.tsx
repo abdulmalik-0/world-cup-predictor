@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { matchesApi } from '../api/matches';
@@ -8,26 +9,50 @@ import { getUserId } from '../lib/identity';
 import { t } from '../i18n';
 
 export function MyStats() {
-  const userId = getUserId(); // the signed-in user
+  const myId = getUserId(); // the signed-in user
+  const [selectedId, setSelectedId] = useState<string | null>(myId);
 
   const board = useQuery({ queryKey: ['leaderboard'], queryFn: matchesApi.leaderboard });
   const rows = board.data ?? [];
 
-  const me = rows.find((r) => r.userId === userId) ?? null;
-  const rank = me ? rows.findIndex((r) => r.userId === userId) + 1 : null;
+  // Anyone can be viewed — dropdown of every player, default = you.
+  const players = useMemo(
+    () => [...rows].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    [rows],
+  );
+  const target = selectedId ?? myId;
+  const me = rows.find((r) => r.userId === target) ?? null;
+  const rank = me ? rows.findIndex((r) => r.userId === target) + 1 : null;
 
   return (
     <main className="pt-[86px] pb-20 px-4">
       <div className="mx-auto w-full max-w-[680px]">
-        <header className="flex items-center gap-3 mb-5">
+        <header className="flex items-center gap-3 mb-4">
           <span className="text-3xl">📊</span>
           <h1 className="text-2xl font-extrabold">{t('myStats')}</h1>
         </header>
 
+        {rows.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-[12px] text-white/55 mb-1.5">{t('selectPlayer')}</label>
+            <select
+              value={target ?? ''}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-3 text-white outline-none focus:border-emerald-400"
+            >
+              {players.map((p) => (
+                <option key={p.userId} value={p.userId} className="bg-[#0B1118]">
+                  {p.fullName}{p.userId === myId ? `  (${t('youLabel')})` : ''} — {p.department}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {!me ? (
           <p className="text-white/60">{t('loading')}</p>
         ) : (
-          <StatsView me={me} rank={rank!} total={rows.length} />
+          <StatsView me={me} rank={rank!} total={rows.length} isMe={me.userId === myId} />
         )}
       </div>
     </main>
@@ -35,8 +60,8 @@ export function MyStats() {
 }
 
 function StatsView({
-  me, rank, total,
-}: { me: LeaderboardEntry; rank: number; total: number }) {
+  me, rank, total, isMe,
+}: { me: LeaderboardEntry; rank: number; total: number; isMe: boolean }) {
   const accuracy = me.finishedPredictions > 0
     ? Math.round((me.correctPredictions / me.finishedPredictions) * 100)
     : 0;
@@ -52,7 +77,10 @@ function StatsView({
           {rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `#${rank}`}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-lg font-extrabold truncate">{me.fullName}</div>
+          <div className="text-lg font-extrabold truncate">
+            {me.fullName}
+            {isMe && <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: hex(C.pitchGreen, 0.2), color: C.pitchGreen }}>{t('youLabel')}</span>}
+          </div>
           <div className="text-[13px] text-white/55 truncate">{me.department}</div>
           <div className="text-[12px] mt-0.5" style={{ color: C.accentGold }}>
             {t('yourRank')}: {rank} / {total}

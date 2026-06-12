@@ -50,12 +50,18 @@ function App() {
       {loading ? (
         <div className="min-h-[100svh]" />
       ) : !session ? (
-        <Login />
+        // Not signed in: only the auth page is reachable. Any protected path
+        // (/, /dashboard, …) redirects to /login, which opens on Sign In.
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
       ) : (
         <>
           <Navbar />
           <MorphingHero />
           <Routes>
+            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/past" element={<PastMatches />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
