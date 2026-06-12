@@ -6,11 +6,13 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 
 type Mode = 'signin' | 'signup';
 
-const GREEN = 'linear-gradient(180deg, #2EE6A6 0%, #15CE8F 100%)';
+// Exact accent from the reference (Flutter) build.
+const TEAL = '#14E3B4';
 
 /**
- * Email + password auth (Supabase). Sign in ⇄ Sign up happen inside the SAME
- * card: the card height animates smoothly and the extra fields slide/fade in.
+ * Email + password auth — sized & styled to match the reference Flutter login
+ * (entergame.altamimi.tech): 420px card, teal accent, 150px trophy with a gentle
+ * float + golden shine. Sign in ⇄ Sign up animate height inside the same card.
  */
 export function Login() {
   const lang = useLang();
@@ -53,18 +55,16 @@ export function Login() {
     }
   };
 
-  const toggle = () => {
-    setMode(isSignup ? 'signin' : 'signup');
-    setError(null); setNotice(null);
-  };
+  const toggle = () => { setMode(isSignup ? 'signin' : 'signup'); setError(null); setNotice(null); };
 
   return (
-    <main className="min-h-[100svh] flex items-center justify-center px-4 py-12">
-      {/* Language toggle — available on the login screen too. */}
+    <main className="min-h-[100svh] flex items-center justify-center px-6 py-14">
+      {/* Language toggle — top-left, like the reference. */}
       <button
         onClick={toggleLang}
-        className="fixed top-4 right-4 z-10 h-9 w-9 rounded-full border border-emerald-400/50 text-[11px] font-extrabold
-                   flex items-center justify-center text-white hover:bg-white/10 transition"
+        className="fixed top-3 left-3 z-10 h-9 w-9 rounded-full text-[11px] font-extrabold flex items-center justify-center
+                   text-white hover:bg-white/10 transition"
+        style={{ border: `1px solid ${TEAL}80` }}
         aria-label="Toggle language"
       >
         {lang === 'en' ? 'عربي' : 'Eng'}
@@ -74,53 +74,42 @@ export function Login() {
         layout
         transition={{ layout: { type: 'spring', stiffness: 260, damping: 30 } }}
         onSubmit={submit}
-        className="w-full max-w-[420px] rounded-3xl border border-white/12 px-6 sm:px-8 py-7 overflow-hidden"
-        style={{ background: '#0B1118', boxShadow: '0 24px 60px rgba(0,0,0,0.55)' }}
+        className="w-full max-w-[420px] px-6 py-7 overflow-hidden"
+        style={{
+          background: 'rgba(11,17,24,0.90)',
+          borderRadius: 20,
+          border: `1px solid ${TEAL}4D`,
+          boxShadow: `0 0 40px -6px ${TEAL}1F, 0 14px 32px rgba(0,0,0,0.55)`,
+        }}
       >
-        {/* ── Logos (kept exactly as the app's existing assets) ── */}
+        {/* ── Brand header (logos kept as the app's existing assets) ── */}
         <motion.div layout="position" className="flex flex-col items-center">
-          {/* WC26 emblem: entrance pop + soft gold glow + gentle float */}
           <motion.div
-            className="relative"
-            initial={{ opacity: 0, scale: 0.82, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="relative shine"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            {!still && (
-              <motion.span
-                aria-hidden
-                className="absolute inset-0 -z-10 rounded-full blur-2xl"
-                style={{ background: 'radial-gradient(circle, rgba(233,184,74,0.45), transparent 70%)' }}
-                animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.85, 1.1, 0.85] }}
-                transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            )}
             <motion.img
               src="/wc26_logo.png"
               alt="World Cup 2026"
-              className="h-20 object-contain"
-              animate={still ? undefined : { y: [0, -5, 0] }}
-              transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="h-[150px] object-contain"
+              animate={still ? undefined : { y: [-5, 5] }}
+              transition={{ duration: 2.6, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
             />
           </motion.div>
 
-          <motion.img
-            src="/entergame_logo.png"
-            alt="EnterGame"
-            className="h-8 object-contain mt-3"
+          <motion.div
+            className="flex flex-col items-center shine"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
-          />
-          {/* "World Cup Arena" stays in English in both languages (not translated). */}
-          <motion.h1
-            className="text-xl font-extrabold mt-3"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.28, ease: 'easeOut' }}
           >
-            World Cup Arena
-          </motion.h1>
+            <img src="/entergame_logo.png" alt="EnterGame" className="h-14 object-contain mt-5" />
+            {/* "World Cup Arena" stays English in both languages (not translated). */}
+            <h1 className="text-[22px] font-black tracking-wide mt-3">World Cup Arena</h1>
+          </motion.div>
+
           <AnimatePresence mode="wait">
             <motion.p
               key={mode}
@@ -128,7 +117,7 @@ export function Login() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
-              className="text-[13px] text-white/55 text-center mt-1"
+              className="text-[14px] text-white/55 text-center mt-2"
             >
               {isSignup ? t('signUpSubtitle') : t('signInSubtitle')}
             </motion.p>
@@ -136,7 +125,7 @@ export function Login() {
         </motion.div>
 
         {/* ── Fields ── */}
-        <motion.div layout className="mt-6 space-y-3">
+        <motion.div layout className="mt-8 space-y-4">
           <Collapsible show={isSignup}>
             <Field icon={<UserIcon />} placeholder={t('fullNameField')} value={fullName} onChange={setFullName} autoComplete="name" />
           </Collapsible>
@@ -173,13 +162,13 @@ export function Login() {
           type="submit"
           disabled={busy}
           whileTap={{ scale: 0.98 }}
-          className="w-full mt-5 py-3 rounded-xl font-extrabold disabled:opacity-50"
-          style={{ background: GREEN, color: '#04130C' }}
+          className="w-full mt-5 rounded-xl font-extrabold text-[16px] flex items-center justify-center disabled:opacity-50"
+          style={{ background: TEAL, color: '#05070B', height: 50 }}
         >
           {busy ? t('working') : isSignup ? t('signUpCtaFull') : t('signInCta')}
         </motion.button>
 
-        <motion.button layout type="button" onClick={toggle} className="w-full mt-3.5 text-[13px] hover:underline" style={{ color: '#2EE6A6' }}>
+        <motion.button layout type="button" onClick={toggle} className="w-full mt-3 text-[14px] hover:underline" style={{ color: TEAL }}>
           {isSignup ? t('haveAccount') : t('firstTime')}
         </motion.button>
       </motion.form>
@@ -222,8 +211,9 @@ function Field({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="w-full rounded-xl bg-[#0E1620] border border-white/12 pl-11 pr-11 py-3 text-white
-                   placeholder-white/40 outline-none focus:border-emerald-400/70 transition"
+        className="w-full rounded-xl border border-white/10 pl-11 pr-11 text-white placeholder-white/40 outline-none
+                   focus:border-[#14E3B4]/70 transition"
+        style={{ background: '#0F2032', height: 52 }}
       />
       {trailing && <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</span>}
     </div>

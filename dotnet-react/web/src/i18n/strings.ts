@@ -84,7 +84,7 @@ export const STR = {
   // Auth / login
   signInSubtitle: { en: 'Sign in with email & password', ar: 'سجّل دخولك بالإيميل وكلمة المرور' },
   signUpSubtitle: { en: "The prediction arena — sign up and let's see your luck or skill!",
-                    ar: 'حلبة التوقعات — أنشئ حساباً ولنرَ حظّك أو مهارتك!' },
+                    ar: 'ساحة التوقعات.. سجّل وخلنا نشوف حظّك أو حنكتك!' },
   email:          { en: 'Email',        ar: 'البريد الإلكتروني' },
   password:       { en: 'Password',     ar: 'كلمة المرور' },
   confirmPassword:{ en: 'Confirm password', ar: 'تأكيد كلمة المرور' },
