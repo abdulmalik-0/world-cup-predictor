@@ -49,3 +49,9 @@ lib/core/config/supabase_config.dart
 
 # Supabase CLI cache
 supabase/.temp/
+
+# Local credentials — never commit
+CREDENTIALS.md
+.env
+dotnet-react/web/.env
+dotnet-react/api/appsettings.Development.json
