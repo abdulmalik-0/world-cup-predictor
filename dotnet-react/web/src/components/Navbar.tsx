@@ -7,7 +7,7 @@ import { NavLink } from 'react-router-dom';
  */
 export function Navbar() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-[66px] bg-black/95 border-b border-white/10 px-4 flex items-center text-white">
+    <header className="fixed inset-x-0 top-0 z-40 h-[66px] bg-black/95 border-b border-white/10 px-4 flex items-center text-white">
       <EnterGameLogo />
       <LangChip />
 
@@ -38,8 +38,8 @@ export function Navbar() {
 
 function EnterGameLogo() {
   return (
-    <a href="/" className="flex items-center gap-2 select-none">
-      <img src="/entergame_logo.png" alt="EnterGame" className="h-7" />
+    <a href="/" className="flex items-center gap-2 select-none shrink-0">
+      <img src="/entergame_logo.png" alt="EnterGame" className="h-8" />
     </a>
   );
 }

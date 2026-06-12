@@ -1,91 +1,288 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Match, Prediction } from '../api/types';
 import { matchesApi } from '../api/matches';
+import { C } from '../lib/theme';
+import { flagUrl, jerseyColor, isSaudi as isSaudiCode } from '../lib/teams';
+import { isPredictionOpen, untilLock, formatKickoff } from '../lib/time';
+import { useNow } from '../hooks/useNow';
+import { CountdownBox, hex } from './CountdownBox';
+
+const MAX = 30;
 
 export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) {
   const [home, setHome] = useState(pick?.homeScore ?? 0);
   const [away, setAway] = useState(pick?.awayScore ?? 0);
+  const [justSaved, setJustSaved] = useState(false);
+  const savedTimer = useRef<number | undefined>(undefined);
   const qc = useQueryClient();
+  const now = useNow();
+
+  useEffect(() => {
+    setHome(pick?.homeScore ?? 0);
+    setAway(pick?.awayScore ?? 0);
+  }, [pick?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const open = isPredictionOpen(match.kickoffAt, now);
+  const hasPick = !!pick;
+  const dirty = !pick || home !== pick.homeScore || away !== pick.awayScore;
+  const saudi = isSaudiCode(match.homeTeamCode) || isSaudiCode(match.awayTeamCode);
 
   const save = useMutation({
     mutationFn: () => matchesApi.savePick(match.id, home, away),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['picks'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['picks'] });
+      setJustSaved(true);
+      window.clearTimeout(savedTimer.current);
+      savedTimer.current = window.setTimeout(() => setJustSaved(false), 1800);
+    },
   });
 
-  const isSaudi = match.homeTeamCode === 'SA' || match.awayTeamCode === 'SA';
-  const dirty = home !== (pick?.homeScore ?? 0) || away !== (pick?.awayScore ?? 0);
+  const homeName = match.homeTeamEn ?? match.homeTeam;
+  const awayName = match.awayTeamEn ?? match.awayTeam;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="glass rounded-2xl p-4 relative"
+      className="glass rounded-[18px] px-3.5 pt-4 pb-4 mb-4"
     >
-      {/* Score bug */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-black/40 rounded-xl p-3">
-        <Flag code={match.homeTeamCode} />
-        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-900/50 rounded-md">
-          <Stepper value={home} onChange={setHome} />
-          <span className="text-2xl font-black opacity-50">×</span>
-          <Stepper value={away} onChange={setAway} />
+      {/* ── Broadcast score bug (always LTR: home → away) ── */}
+      <div dir="ltr" className="flex flex-col items-stretch">
+        <div className="relative">
+          <div className="overflow-hidden rounded-2xl flex h-[70px]" style={{ background: C.codeBg }}>
+            <div style={{ width: 5, background: jerseyColor(match.homeTeamCode) }} />
+            <Flag code={match.homeTeamCode} />
+            <ScoreCell value={home} onChange={setHome} open={open} />
+            <CenterBadge />
+            <ScoreCell value={away} onChange={setAway} open={open} />
+            <Flag code={match.awayTeamCode} />
+            <div style={{ width: 5, background: jerseyColor(match.awayTeamCode) }} />
+          </div>
+
+          {saudi && (
+            <div
+              className="absolute -top-4"
+              style={isSaudiCode(match.homeTeamCode) ? { left: 24 } : { right: 24 }}
+            >
+              <DoubleBadge />
+            </div>
+          )}
         </div>
-        <Flag code={match.awayTeamCode} align="right" />
+
+        <div className="-mt-px flex justify-center">
+          <ClockTab kickoffIso={match.kickoffAt} open={open} now={now} />
+        </div>
       </div>
 
-      {isSaudi && (
-        <span className="absolute -top-3 right-6 text-[11px] font-black px-2 py-1 rounded-md
-                         bg-black border border-orange-400/60 text-orange-300 shadow-[0_0_14px_rgba(255,140,0,.55)]">
-          Double points 🔥
-        </span>
+      {/* ── Team names + kickoff ── */}
+      <div className="text-center mt-3.5 font-bold text-[14px]">
+        {homeName} <span className="opacity-50 px-1">×</span> {awayName}
+      </div>
+      <div className="text-center mt-0.5 text-[12px] text-white/55 flex items-center justify-center gap-1.5">
+        <span>📅</span> {formatKickoff(match.kickoffAt)}
+      </div>
+
+      {/* ── Save / closed ── */}
+      {open ? (
+        <>
+          <StatusLine justSaved={justSaved} hasPick={hasPick} dirty={dirty} />
+          <button
+            onClick={() => save.mutate()}
+            disabled={!dirty || save.isPending}
+            className="mt-2.5 w-full py-3 rounded-xl font-extrabold transition disabled:cursor-not-allowed"
+            style={
+              justSaved
+                ? { background: C.pitchGreen, color: '#04130C' }
+                : dirty
+                ? { background: C.primaryGreen, color: '#fff' }
+                : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
+            }
+          >
+            {save.isPending
+              ? 'Saving…'
+              : justSaved
+              ? 'Saved! ✓'
+              : !hasPick
+              ? 'Save pick'
+              : dirty
+              ? 'Update pick'
+              : 'Saved ✓'}
+          </button>
+        </>
+      ) : (
+        <ClosedSummary match={match} pick={pick} />
       )}
-
-      <div className="mt-3 text-center text-sm">
-        <span className="font-bold">{match.homeTeamEn ?? match.homeTeam}</span>
-        <span className="opacity-50 px-2">×</span>
-        <span className="font-bold">{match.awayTeamEn ?? match.awayTeam}</span>
-      </div>
-      <div className="text-center text-xs opacity-60 mt-1">
-        {new Date(match.kickoffAt).toLocaleString()}
-      </div>
-
-      <button
-        onClick={() => save.mutate()}
-        disabled={!dirty || save.isPending}
-        className="mt-4 w-full py-3 rounded-xl bg-emerald-500 text-black font-extrabold
-                   disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-400 transition"
-      >
-        {save.isPending ? 'Saving…' : dirty ? 'Save pick' : 'Saved ✓'}
-      </button>
     </motion.div>
   );
 }
 
-function Stepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+function ScoreCell({ value, onChange, open }: { value: number; onChange: (n: number) => void; open: boolean }) {
+  const number = (
+    <motion.div
+      key={value}
+      initial={{ scale: 1.35 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="text-white font-black"
+      style={{ fontSize: 30, lineHeight: 1 }}
+    >
+      {value}
+    </motion.div>
+  );
   return (
-    <div className="flex flex-col items-center select-none">
-      <button onClick={() => onChange(Math.min(30, value + 1))}
-              className="text-white/40 hover:text-white">^</button>
-      <div className="text-3xl font-black tabular-nums w-10 text-center">{value}</div>
-      <button onClick={() => onChange(Math.max(0, value - 1))}
-              className="text-white/40 hover:text-white rotate-180">^</button>
+    <div className="flex flex-col items-center justify-center" style={{ width: 56, background: C.scoreBg }}>
+      {open ? (
+        <>
+          <Chevron dir="up" onClick={value < MAX ? () => onChange(value + 1) : undefined} />
+          <div className="flex-1 flex items-center justify-center">{number}</div>
+          <Chevron dir="down" onClick={value > 0 ? () => onChange(value - 1) : undefined} />
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">{number}</div>
+      )}
     </div>
   );
 }
 
-function Flag({ code, align = 'left' }: { code: string; align?: 'left' | 'right' }) {
-  // ISO codes that flagcdn supports; map our 2-letter app codes.
-  const iso = code.toLowerCase();
+function Chevron({ dir, onClick }: { dir: 'up' | 'down'; onClick?: () => void }) {
   return (
-    <div className={`flex items-center ${align === 'right' ? 'justify-end' : ''} p-3`}>
-      <img
-        src={`https://flagcdn.com/w80/${iso}.png`}
-        alt={code}
-        className="h-8 rounded shadow-md"
-        onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
-      />
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      className="h-5 w-full flex items-center justify-center"
+      style={{ color: onClick ? '#fff' : 'rgba(255,255,255,0.25)' }}
+    >
+      <svg
+        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+        style={{ transform: dir === 'down' ? 'rotate(180deg)' : 'none' }}
+      >
+        <polyline points="6 15 12 9 18 15" />
+      </svg>
+    </button>
+  );
+}
+
+function Flag({ code }: { code: string }) {
+  const url = flagUrl(code);
+  return (
+    <div className="flex-1 flex items-center justify-center px-4 py-3" style={{ background: C.codeBg }}>
+      {url ? (
+        <img
+          src={url}
+          alt={code}
+          className="max-h-full rounded-[3px] object-contain"
+          style={{ maxWidth: 56 }}
+          onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
+        />
+      ) : (
+        <span className="text-white/25">⚑</span>
+      )}
+    </div>
+  );
+}
+
+/** Center World Cup 26 logo badge inside the score bug. */
+function CenterBadge() {
+  return (
+    <div className="flex items-center justify-center" style={{ width: 54, background: C.codeBg }}>
+      <img src="/wc26_logo.png" alt="WC26" style={{ height: 58, objectFit: 'contain' }} />
+    </div>
+  );
+}
+
+/** Green glassy clock tab (or red "Closed" tab) hanging below the bug. */
+function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean; now: number }) {
+  if (!open) {
+    return (
+      <div
+        className="flex items-center gap-1.5 px-4 py-1.5 text-white font-black text-[15px]"
+        style={{ background: '#B3261E', borderRadius: '0 0 12px 12px' }}
+      >
+        🔒 Closed
+      </div>
+    );
+  }
+  const t = untilLock(kickoffIso, now);
+  return (
+    <div
+      className="flex items-end gap-1 px-2 pt-[5px] pb-1.5"
+      style={{
+        borderRadius: '0 0 12px 12px',
+        background: `linear-gradient(135deg, ${hex(C.blueAccent, 0.18)}, rgba(255,255,255,0.04))`,
+        border: `1px solid ${hex(C.blueAccent, 0.3)}`,
+        backdropFilter: 'blur(14px)',
+      }}
+    >
+      <CountdownBox size="tab" value={t.days} label="DAYS" />
+      <CountdownBox size="tab" value={t.hours} label="HRS" />
+      <CountdownBox size="tab" value={t.mins} label="MIN" />
+      <CountdownBox size="tab" value={t.secs} label="SEC" />
+    </div>
+  );
+}
+
+function DoubleBadge() {
+  return (
+    <motion.div
+      animate={{ scale: [1, 1.08, 1] }}
+      transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
+      className="px-2.5 py-1 rounded-[10px] font-black text-[11px] whitespace-nowrap"
+      style={{
+        background: '#1A1A1A',
+        color: C.arabBadgeOrange,
+        border: `1px solid ${hex(C.arabBadgeOrange, 0.5)}`,
+        boxShadow: `0 0 14px -2px ${hex(C.arabBadgeOrange, 0.55)}`,
+      }}
+    >
+      Double points 🔥
+    </motion.div>
+  );
+}
+
+function StatusLine({ justSaved, hasPick, dirty }: { justSaved: boolean; hasPick: boolean; dirty: boolean }) {
+  let icon = '', text = '', color = '';
+  if (justSaved) { icon = '✅'; text = 'Pick saved!'; color = C.pitchGreen; }
+  else if (hasPick && dirty) { icon = '✎'; text = 'Unsaved changes'; color = C.accentGold; }
+  else if (hasPick && !dirty) { icon = '✔'; text = 'Your pick is saved'; color = C.pitchGreen; }
+  else return <div className="h-3" />;
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-3 text-[12px] font-bold" style={{ color }}>
+      <span>{icon}</span> {text}
+    </div>
+  );
+}
+
+function ClosedSummary({ match, pick }: { match: Match; pick?: Prediction }) {
+  const finished = match.status === 'finished' && match.homeScore != null;
+  return (
+    <div className="mt-3 flex flex-col items-center gap-2 text-[14px]">
+      {finished && <Chip label="Result" value={`${match.homeScore} : ${match.awayScore}`} color={C.accentGold} />}
+      {pick ? (
+        <Chip label="Your pick" value={`${pick.homeScore} : ${pick.awayScore}`} color={C.pitchGreen} />
+      ) : (
+        <span className="text-white/55 text-[13px]">No prediction made</span>
+      )}
+      {finished && pick?.pointsEarned != null && (
+        <div className="mt-1 font-black text-[16px]" style={{ color: C.accentGold }}>
+          +{pick.pointsEarned} points
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Chip({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-white/80">{label}:</span>
+      <span className="px-3.5 py-1 rounded-[10px] font-black" style={{ background: hex(color, 0.16), color }}>
+        {value}
+      </span>
     </div>
   );
 }
