@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Match, Prediction } from '../api/types';
@@ -15,7 +15,7 @@ import { t } from '../i18n';
 
 const MAX = 30;
 
-export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) {
+export const MatchCard = memo(function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) {
   const [home, setHome] = useState(pick?.homeScore ?? 0);
   const [away, setAway] = useState(pick?.awayScore ?? 0);
   const [justSaved, setJustSaved] = useState(false);
@@ -25,7 +25,7 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   const still = useReducedMotion();
   // Coarse clock for the card body (lock state flips at most once); the live
   // per-second countdown lives in <ClockTab> so it doesn't re-render the card.
-  const now = useNow(still ? 30000 : 15000);
+  const now = useNow(still ? 120000 : 15000);
 
   useEffect(() => {
     setHome(pick?.homeScore ?? 0);
@@ -148,7 +148,7 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
       )}
     </motion.div>
   );
-}
+});
 
 function Spinner() {
   return (
@@ -233,7 +233,7 @@ function Flag({ code }: { code: string }) {
 function CenterBadge() {
   return (
     <div className="flex items-center justify-center" style={{ width: 54, background: C.codeBg }}>
-      <img src="/wc26_logo.png" alt="WC26" style={{ height: 58, objectFit: 'contain' }} />
+      <img src="/wc26_logo.webp" alt="WC26" decoding="async" style={{ height: 58, objectFit: 'contain' }} />
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { dayKey, dayLabel } from '../lib/time';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { myPicks } from '../api/predictions';
-import { getUserName } from '../lib/identity';
 import { C } from '../lib/theme';
 import { t, getLang } from '../i18n';
 
@@ -22,7 +21,6 @@ export function Dashboard() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [visible, setVisible] = useState(PAGE);
   const still = useReducedMotion();
-  const userName = getUserName();
 
   const matchesQ = useQuery({ queryKey: ['matches'], queryFn: matchesApi.upcoming });
   const picksQ = useQuery({ queryKey: ['picks'], queryFn: myPicks, retry: false });
@@ -57,7 +55,9 @@ export function Dashboard() {
 
   // Spacer = morph distance, so content rises into place as the clip lands.
   const { h: vh } = useWindowSize();
-  const morph = Math.min(Math.max((vh - NAV_H) * 0.82, 320), 760);
+  // Desktop: tall spacer = morph distance. Mobile/reduced-motion: no big hero
+  // (it's parked in the navbar), so just clear the fixed navbar.
+  const morph = still ? NAV_H + 16 : Math.min(Math.max((vh - NAV_H) * 0.82, 320), 760);
 
   return (
     <main>
@@ -71,13 +71,6 @@ export function Dashboard() {
             kickoffIso={nextMatch.kickoffAt}
             title={`${teamName(nextMatch.homeTeamEn, nextMatch.homeTeam)}  ×  ${teamName(nextMatch.awayTeamEn, nextMatch.awayTeam)}`}
           />
-        )}
-
-        {/* Identity chip — shows who you're signed in as. */}
-        {userName && (
-          <div className="text-center text-[12px] text-white/55 -mt-1">
-            👤 {t('predictingAs')} <b className="text-white/85">{userName}</b>
-          </div>
         )}
 
         <ScoringRulesCard />

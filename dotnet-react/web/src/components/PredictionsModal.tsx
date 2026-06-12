@@ -6,6 +6,7 @@ import { matchesApi } from '../api/matches';
 import { C } from '../lib/theme';
 import { hex } from './CountdownBox';
 import { isPredictionOpen } from '../lib/time';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { t } from '../i18n';
 
 /**
@@ -17,6 +18,7 @@ import { t } from '../i18n';
 export function PredictionsModal({ match, onClose }: { match: Match; onClose: () => void }) {
   const open = isPredictionOpen(match.kickoffAt);
   const meId = localStorage.getItem('eg.userId');
+  const still = useReducedMotion(); // no spring/fade on phones — JS animation, CSS reset can't reach it
 
   const q = useQuery({
     queryKey: ['matchPicks', match.id],
@@ -33,7 +35,7 @@ export function PredictionsModal({ match, onClose }: { match: Match; onClose: ()
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
-        initial={{ opacity: 0 }}
+        initial={still ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
@@ -41,9 +43,9 @@ export function PredictionsModal({ match, onClose }: { match: Match; onClose: ()
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
         <motion.div
-          initial={{ y: 40, opacity: 0 }}
+          initial={still ? false : { y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+          transition={still ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 32 }}
           className="relative w-full sm:max-w-[520px] max-h-[82vh] flex flex-col rounded-t-3xl sm:rounded-3xl
                      border border-white/15 overflow-hidden"
           style={{ background: '#0B1118' }}

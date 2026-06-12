@@ -6,6 +6,7 @@ import { matchesApi } from '../api/matches';
 import { C } from '../lib/theme';
 import { flagUrl } from '../lib/teams';
 import { hex } from './CountdownBox';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { t } from '../i18n';
 
 /** Bottom-sheet showing one player's past predictions (from the leaderboard). */
@@ -17,19 +18,20 @@ export function UserHistoryModal({
     queryFn: () => matchesApi.playerHistory(userId),
   });
   const rows = q.data ?? [];
+  const still = useReducedMotion(); // no spring/fade on phones
 
   return createPortal(
     <motion.div
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
-      initial={{ opacity: 0 }}
+      initial={still ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <motion.div
-        initial={{ y: 40, opacity: 0 }}
+        initial={still ? false : { y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+        transition={still ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 32 }}
         className="relative w-full sm:max-w-[540px] max-h-[82vh] flex flex-col rounded-t-3xl sm:rounded-3xl
                    border border-white/15 overflow-hidden"
         style={{ background: '#0B1118' }}

@@ -7,6 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050505" />
     <title>EnterGame World Cup Arena</title>
+    <!-- Fonts: preconnect + load in parallel (moved out of index.css @import). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" />
+    <!-- Get the masked "26" hero poster on screen ASAP on phones. -->
+    <link rel="preload" as="image" href="/hero-poster.webp" type="image/webp" fetchpriority="high" />
   </head>
   <body>
     <div id="root"></div>

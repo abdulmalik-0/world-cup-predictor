@@ -45,7 +45,7 @@ export function Navbar() {
 function EnterGameLogo() {
   return (
     <a href="/" className="flex items-center gap-2 select-none shrink-0">
-      <img src="/entergame_logo.png" alt="EnterGame" className="h-5 sm:h-7 md:h-8" />
+      <img src="/entergame_logo.webp" alt="EnterGame" className="h-5 sm:h-7 md:h-8" />
     </a>
   );
 }

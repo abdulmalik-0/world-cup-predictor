@@ -103,7 +103,7 @@ export function Login() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.img
-              src="/wc26_logo.png"
+              src="/wc26_logo.webp"
               alt="World Cup 2026"
               className="h-[150px] object-contain"
               animate={still ? undefined : { y: [-5, 5] }}
@@ -117,7 +117,7 @@ export function Login() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
           >
-            <img src="/entergame_logo.png" alt="EnterGame" className="h-14 object-contain mt-5" />
+            <img src="/entergame_logo.webp" alt="EnterGame" decoding="async" className="h-14 object-contain mt-5" />
             {/* "World Cup Arena" stays English in both languages (not translated). */}
             <h1 className="text-[22px] font-black tracking-wide mt-3">World Cup Arena</h1>
           </motion.div>

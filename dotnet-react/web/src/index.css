@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Bebas+Neue&display=swap');
+/* Fonts are loaded via <link> in index.html (with preconnect) so they fetch in
+   parallel instead of blocking behind this stylesheet's parse. */
 
 @tailwind base;
 @tailwind components;
@@ -50,6 +51,13 @@ html, body, #root {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  }
+  /* Kill ALL backdrop blur on phones (e.g. Tailwind `backdrop-blur-sm` on the
+     modal scrims), not just .glass — backdrop-filter is the biggest mobile paint
+     cost and the media query above only resets .glass. */
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 

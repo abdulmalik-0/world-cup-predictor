@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
@@ -8,12 +8,15 @@ import { useAuth } from './hooks/useAuth'
 import { Navbar } from './components/Navbar'
 import { MorphingHero } from './components/MorphingHero'
 import { WeAre26Background } from './components/WeAre26Background'
-import { Dashboard } from './pages/Dashboard'
-import { Leaderboard } from './pages/Leaderboard'
-import { MyStats } from './pages/MyStats'
-import { PastMatches } from './pages/PastMatches'
-import { Login } from './pages/Login'
 import { Toaster } from './lib/toast'
+
+// Pages are code-split: each route's JS is fetched on demand instead of shipping
+// in one big initial chunk — faster first paint/interactivity on mobile.
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })))
+const MyStats = lazy(() => import('./pages/MyStats').then((m) => ({ default: m.MyStats })))
+const PastMatches = lazy(() => import('./pages/PastMatches').then((m) => ({ default: m.PastMatches })))
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })))
 
 // Set the lang attribute (dir stays LTR) before first paint.
 applyDir()
@@ -52,22 +55,26 @@ function App() {
       ) : !session ? (
         // Not signed in: only the auth page is reachable. Any protected path
         // (/, /dashboard, …) redirects to /login, which opens on Sign In.
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+        <Suspense fallback={<div className="min-h-[100svh]" />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
       ) : (
         <>
           <Navbar />
           <MorphingHero />
-          <Routes>
-            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/past" element={<PastMatches />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/stats" element={<MyStats />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          <Suspense fallback={<div className="min-h-[100svh]" />}>
+            <Routes>
+              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/past" element={<PastMatches />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/stats" element={<MyStats />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
         </>
       )}
     </BrowserRouter>

@@ -59,7 +59,10 @@ export function MorphingHero() {
   const boxLeft = vw / 2 - bigW / 2;
   const boxTop = bigCy - bigH / 2;
 
-  if (!isDashboard) {
+  // Mobile / reduced-motion: skip the scroll-linked morph entirely (re-scaling a
+  // clip-path'd SVG every scroll frame is what stalls phones). Just park the "26"
+  // small in the navbar, exactly like the off-dashboard state.
+  if (!isDashboard || still) {
     const w = smallH * aspect;
     return (
       <div className="pointer-events-none fixed inset-0 z-50" aria-hidden>
