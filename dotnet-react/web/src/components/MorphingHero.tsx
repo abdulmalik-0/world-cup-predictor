@@ -3,7 +3,9 @@ import { WcMask } from './WcMask';
 import { useWindowSize } from '../hooks/useWindowSize';
 
 const NAV_H = 66;
-const ASPECT = 1115 / 428; // ≈ 2.605
+const MOBILE_BP = 768;
+const H_ASPECT = 1115 / 428; // wide "26 NEW YORK NEW JERSEY"  ≈ 2.605
+const V_ASPECT = 134 / 255; //  square-ish "2🏆6" emblem        ≈ 0.525
 const SMALL_H = 46; // landed height inside the navbar
 
 /** easeInOutCubic */
@@ -12,29 +14,40 @@ function easeInOut(t: number) {
 }
 
 /**
- * MorphingHero — the "26 NEW YORK NEW JERSEY" masked video.
+ * MorphingHero — the World Cup 26 masked video.
+ *
+ * Desktop: the wide "26 NEW YORK NEW JERSEY" lockup.
+ * Mobile : the square "2🏆6" emblem (same responsive choice as the Flutter app).
  *
  * At the top the page is WHITE with the big masked lockup centered (like
- * nynjfwc26.com). On scroll the white page fades away to reveal the dark
- * WE-ARE-26 background, while the clip shrinks AND flies into the centre of the
- * navbar — reversing on the way back up. (Ported from the Flutter morph.)
+ * nynjfwc26.com). On scroll the white page fades to reveal the dark WE-ARE-26
+ * background, while the clip shrinks AND flies into the centre of the navbar —
+ * reversing on the way back up.
  */
 export function MorphingHero() {
   const { scrollY } = useScroll();
   const { w: vw, h: vh } = useWindowSize();
+  const isMobile = vw < MOBILE_BP;
+
+  const variant = isMobile ? 'vertical' : 'horizontal';
+  const aspect = isMobile ? V_ASPECT : H_ASPECT;
 
   const bodyH = vh - NAV_H;
-  const bigH = Math.min(bodyH * 0.52, (vw * 0.82) / ASPECT);
+  // Big hero size: cap by both available height and width so it always fits.
+  const bigH = isMobile
+    ? Math.min(bodyH * 0.42, (vw * 0.62) / aspect)
+    : Math.min(bodyH * 0.52, (vw * 0.82) / aspect);
+  const smallH = isMobile ? 50 : SMALL_H;
   const MORPH = Math.min(Math.max(bodyH * 0.82, 320), 760);
 
   // eased scroll progress 0 → 1
   const raw = useTransform(scrollY, [0, MORPH], [0, 1], { clamp: true });
   const t = useTransform(raw, easeInOut);
 
-  const height = useTransform(t, (v) => bigH + (SMALL_H - bigH) * v);
-  const width = useTransform(height, (h) => h * ASPECT);
+  const height = useTransform(t, (v) => bigH + (smallH - bigH) * v);
+  const width = useTransform(height, (h) => h * aspect);
 
-  const bigCy = NAV_H + bodyH * 0.42;
+  const bigCy = NAV_H + bodyH * (isMobile ? 0.4 : 0.42);
   const smallCy = NAV_H / 2;
   const top = useTransform([t, height] as const, ([tv, h]: number[]) => {
     const cy = bigCy + (smallCy - bigCy) * tv;
@@ -57,7 +70,7 @@ export function MorphingHero() {
       {/* The morphing masked clip, on top of everything. */}
       <div className="pointer-events-none fixed inset-0 z-50" aria-hidden>
         <motion.div style={{ position: 'absolute', top, left, width, height }}>
-          <WcMask whiteOpacity={0} variant="horizontal" />
+          <WcMask whiteOpacity={0} variant={variant} />
         </motion.div>
       </div>
     </>
