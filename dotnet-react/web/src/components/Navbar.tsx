@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { t, setLang, getLang } from '../i18n';
 
 const LINKS = [
-  { to: '/dashboard', label: 'Matches' },
-  { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/stats', label: 'My Stats' },
+  { to: '/dashboard', key: 'matches' as const },
+  { to: '/leaderboard', key: 'leaderboard' as const },
+  { to: '/stats', key: 'myStats' as const },
 ];
 
 /**
@@ -25,7 +26,7 @@ export function Navbar() {
       {/* Desktop: inline links + logout */}
       <nav className="hidden md:flex items-center gap-1">
         {LINKS.map((l) => (
-          <NavTab key={l.to} to={l.to} label={l.label} />
+          <NavTab key={l.to} to={l.to} label={t(l.key)} />
         ))}
         <LogoutButton className="ml-2" />
       </nav>
@@ -48,9 +49,9 @@ function EnterGameLogo() {
 }
 
 function LangChip({ className = '' }: { className?: string }) {
-  const lang = (localStorage.getItem('eg.lang') ?? 'en') as 'en' | 'ar';
+  const lang = getLang();
   const toggle = () => {
-    localStorage.setItem('eg.lang', lang === 'en' ? 'ar' : 'en');
+    setLang(lang === 'en' ? 'ar' : 'en');
     location.reload();
   };
   return (
@@ -154,7 +155,7 @@ function MobileMenu() {
                 }`
               }
             >
-              {l.label}
+              {t(l.key)}
             </NavLink>
           ))}
           <button
@@ -170,7 +171,7 @@ function MobileMenu() {
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            Sign out
+            {t('signOut')}
           </button>
         </div>
       )}

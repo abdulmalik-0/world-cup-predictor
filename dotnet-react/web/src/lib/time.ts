@@ -43,9 +43,9 @@ export function dayKey(kickoffIso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-export function dayLabel(kickoffIso: string): string {
+export function dayLabel(kickoffIso: string, locale = 'en'): string {
   const d = new Date(kickoffIso);
-  return d.toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'numeric' });
+  return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'numeric' });
 }
 
 /** 1s ticker hook helper value — components use useEffect(setInterval). */

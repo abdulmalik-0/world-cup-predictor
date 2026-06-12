@@ -3,12 +3,13 @@ import { C } from '../lib/theme';
 import { untilKickoff } from '../lib/time';
 import { useNow } from '../hooks/useNow';
 import { CountdownBox, hex } from './CountdownBox';
+import { t } from '../i18n';
 
 /** The navy "Next match" bar at the top of the dashboard list. */
 export function MatchCountdownBar({ kickoffIso, title }: { kickoffIso: string; title?: string }) {
   const now = useNow();
-  const t = untilKickoff(kickoffIso, now);
-  const live = t.negative;
+  const time = untilKickoff(kickoffIso, now);
+  const live = time.negative;
 
   return (
     <motion.div
@@ -25,7 +26,7 @@ export function MatchCountdownBar({ kickoffIso, title }: { kickoffIso: string; t
       <span style={{ fontSize: 22 }}>⚽</span>
       <div className="flex-1 min-w-0">
         <div style={{ color: C.goldLabel, fontWeight: 900, fontSize: 12, letterSpacing: 1 }}>
-          {live ? 'Live now 🔴' : 'Next match'}
+          {live ? t('liveNow') : t('nextMatch')}
         </div>
         {title && (
           <div className="truncate text-white" style={{ fontWeight: 700, fontSize: 14 }}>
@@ -34,11 +35,11 @@ export function MatchCountdownBar({ kickoffIso, title }: { kickoffIso: string; t
         )}
       </div>
       {!live && (
-        <div className="flex items-end gap-1.5">
-          <CountdownBox value={t.days} label="DAYS" />
-          <CountdownBox value={t.hours} label="HOURS" />
-          <CountdownBox value={t.mins} label="MINUTES" />
-          <CountdownBox value={t.secs} label="SECONDS" />
+        <div className="flex items-end gap-1.5" dir="ltr">
+          <CountdownBox value={time.days} label={t('days')} />
+          <CountdownBox value={time.hours} label={t('hours')} />
+          <CountdownBox value={time.mins} label={t('minutes')} />
+          <CountdownBox value={time.secs} label={t('seconds')} />
         </div>
       )}
     </motion.div>

@@ -30,8 +30,15 @@ export interface LeaderboardEntry {
   department: string;
   totalPoints: number;
   predictionsMade: number;
+  finishedPredictions: number;
   correctPredictions: number;
   exactPredictions: number;
+}
+
+export interface Player {
+  id: string;
+  fullName: string;
+  department: string;
 }
 
 export interface AuthResponse {

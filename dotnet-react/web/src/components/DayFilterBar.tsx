@@ -4,15 +4,16 @@ export interface DayOption { key: string; label: string; }
 
 /** Horizontal scrollable day chips — "All days" + one chip per match day. */
 export function DayFilterBar({
-  days, selectedKey, onSelect,
+  days, selectedKey, allDaysLabel, onSelect,
 }: {
   days: DayOption[];
   selectedKey: string | null;
+  allDaysLabel: string;
   onSelect: (key: string | null) => void;
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-      <Chip label="All days" selected={selectedKey === null} onClick={() => onSelect(null)} />
+      <Chip label={allDaysLabel} selected={selectedKey === null} onClick={() => onSelect(null)} />
       {days.map((d) => (
         <Chip
           key={d.key}

@@ -3,10 +3,16 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import './index.css'
+import { applyDir } from './i18n'
 import { Navbar } from './components/Navbar'
 import { MorphingHero } from './components/MorphingHero'
 import { WeAre26Background } from './components/WeAre26Background'
 import { Dashboard } from './pages/Dashboard'
+import { Leaderboard } from './pages/Leaderboard'
+import { MyStats } from './pages/MyStats'
+
+// Apply text direction (rtl for Arabic) before first paint.
+applyDir()
 
 const qc = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
@@ -21,17 +27,11 @@ function App() {
       <MorphingHero />
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/leaderboard" element={<Placeholder name="Leaderboard" />} />
-        <Route path="/stats" element={<Placeholder name="My Stats" />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/stats" element={<MyStats />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
-  )
-}
-
-function Placeholder({ name }: { name: string }) {
-  return (
-    <div className="pt-[120px] text-center text-2xl font-bold">{name} — coming soon</div>
   )
 }
 

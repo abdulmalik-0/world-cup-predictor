@@ -1,4 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { WcMask } from './WcMask';
 import { useWindowSize } from '../hooks/useWindowSize';
 
@@ -19,31 +20,31 @@ function easeInOut(t: number) {
  * Desktop: the wide "26 NEW YORK NEW JERSEY" lockup.
  * Mobile : the square "2🏆6" emblem (same responsive choice as the Flutter app).
  *
- * At the top the page is WHITE with the big masked lockup centered (like
- * nynjfwc26.com). On scroll the white page fades to reveal the dark WE-ARE-26
- * background, while the clip shrinks AND flies into the centre of the navbar —
- * reversing on the way back up.
+ * On the dashboard the page starts WHITE with the big masked lockup centered
+ * (like nynjfwc26.com). On scroll the white page fades to reveal the dark
+ * WE-ARE-26 background, while the clip shrinks AND flies into the navbar centre
+ * — reversing on the way up. On other pages the clip just sits in the navbar.
  */
 export function MorphingHero() {
   const { scrollY } = useScroll();
   const { w: vw, h: vh } = useWindowSize();
+  const { pathname } = useLocation();
   const isMobile = vw < MOBILE_BP;
+  const isDashboard = pathname === '/' || pathname.startsWith('/dashboard');
 
   const variant = isMobile ? 'vertical' : 'horizontal';
   const aspect = isMobile ? V_ASPECT : H_ASPECT;
 
   const bodyH = vh - NAV_H;
-  // Big hero size: cap by both available height and width so it always fits.
   const bigH = isMobile
     ? Math.min(bodyH * 0.42, (vw * 0.62) / aspect)
     : Math.min(bodyH * 0.52, (vw * 0.82) / aspect);
   const smallH = isMobile ? 50 : SMALL_H;
   const MORPH = Math.min(Math.max(bodyH * 0.82, 320), 760);
 
-  // eased scroll progress 0 → 1
+  // All hooks run unconditionally (Rules of Hooks); we branch only at render.
   const raw = useTransform(scrollY, [0, MORPH], [0, 1], { clamp: true });
   const t = useTransform(raw, easeInOut);
-
   const height = useTransform(t, (v) => bigH + (smallH - bigH) * v);
   const width = useTransform(height, (h) => h * aspect);
 
@@ -54,8 +55,27 @@ export function MorphingHero() {
     return cy - h / 2;
   });
   const left = useTransform(width, (w) => vw / 2 - w / 2);
-
   const whiteOpacity = useTransform(raw, [0, 0.7], [1, 0], { clamp: true });
+
+  // Off the dashboard: park the small clip statically in the navbar centre.
+  if (!isDashboard) {
+    const w = smallH * aspect;
+    return (
+      <div className="pointer-events-none fixed inset-0 z-50" aria-hidden>
+        <div
+          style={{
+            position: 'absolute',
+            top: NAV_H / 2 - smallH / 2,
+            left: vw / 2 - w / 2,
+            width: w,
+            height: smallH,
+          }}
+        >
+          <WcMask whiteOpacity={0} variant={variant} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

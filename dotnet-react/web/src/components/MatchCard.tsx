@@ -8,6 +8,7 @@ import { flagUrl, jerseyColor, isSaudi as isSaudiCode } from '../lib/teams';
 import { isPredictionOpen, untilLock, formatKickoff } from '../lib/time';
 import { useNow } from '../hooks/useNow';
 import { CountdownBox, hex } from './CountdownBox';
+import { t, getLang } from '../i18n';
 
 const MAX = 30;
 
@@ -39,8 +40,9 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
     },
   });
 
-  const homeName = match.homeTeamEn ?? match.homeTeam;
-  const awayName = match.awayTeamEn ?? match.awayTeam;
+  const ar = getLang() === 'ar';
+  const homeName = ar ? (match.homeTeam ?? match.homeTeamEn) : (match.homeTeamEn ?? match.homeTeam);
+  const awayName = ar ? (match.awayTeam ?? match.awayTeamEn) : (match.awayTeamEn ?? match.awayTeam);
 
   return (
     <motion.div
@@ -103,14 +105,14 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
             }
           >
             {save.isPending
-              ? 'Saving…'
+              ? t('saving')
               : justSaved
-              ? 'Saved! ✓'
+              ? t('savedBang')
               : !hasPick
-              ? 'Save pick'
+              ? t('savePick')
               : dirty
-              ? 'Update pick'
-              : 'Saved ✓'}
+              ? t('updatePick')
+              : t('saved')}
           </button>
         </>
       ) : (
@@ -203,13 +205,14 @@ function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean
         className="flex items-center gap-1.5 px-4 py-1.5 text-white font-black text-[15px]"
         style={{ background: '#B3261E', borderRadius: '0 0 12px 12px' }}
       >
-        🔒 Closed
+        🔒 {t('closed')}
       </div>
     );
   }
-  const t = untilLock(kickoffIso, now);
+  const time = untilLock(kickoffIso, now);
   return (
     <div
+      dir="ltr"
       className="flex items-end gap-1 px-2 pt-[5px] pb-1.5"
       style={{
         borderRadius: '0 0 12px 12px',
@@ -218,10 +221,10 @@ function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean
         backdropFilter: 'blur(14px)',
       }}
     >
-      <CountdownBox size="tab" value={t.days} label="DAYS" />
-      <CountdownBox size="tab" value={t.hours} label="HRS" />
-      <CountdownBox size="tab" value={t.mins} label="MIN" />
-      <CountdownBox size="tab" value={t.secs} label="SEC" />
+      <CountdownBox size="tab" value={time.days} label={t('days')} />
+      <CountdownBox size="tab" value={time.hours} label={t('hrs')} />
+      <CountdownBox size="tab" value={time.mins} label={t('min')} />
+      <CountdownBox size="tab" value={time.secs} label={t('sec')} />
     </div>
   );
 }
@@ -239,16 +242,16 @@ function DoubleBadge() {
         boxShadow: `0 0 14px -2px ${hex(C.arabBadgeOrange, 0.55)}`,
       }}
     >
-      Double points 🔥
+      {t('doubleBadge')}
     </motion.div>
   );
 }
 
 function StatusLine({ justSaved, hasPick, dirty }: { justSaved: boolean; hasPick: boolean; dirty: boolean }) {
   let icon = '', text = '', color = '';
-  if (justSaved) { icon = '✅'; text = 'Pick saved!'; color = C.pitchGreen; }
-  else if (hasPick && dirty) { icon = '✎'; text = 'Unsaved changes'; color = C.accentGold; }
-  else if (hasPick && !dirty) { icon = '✔'; text = 'Your pick is saved'; color = C.pitchGreen; }
+  if (justSaved) { icon = '✅'; text = t('pickSaved'); color = C.pitchGreen; }
+  else if (hasPick && dirty) { icon = '✎'; text = t('unsavedChanges'); color = C.accentGold; }
+  else if (hasPick && !dirty) { icon = '✔'; text = t('yourPickSaved'); color = C.pitchGreen; }
   else return <div className="h-3" />;
   return (
     <div className="flex items-center justify-center gap-1.5 mt-3 text-[12px] font-bold" style={{ color }}>
@@ -261,15 +264,15 @@ function ClosedSummary({ match, pick }: { match: Match; pick?: Prediction }) {
   const finished = match.status === 'finished' && match.homeScore != null;
   return (
     <div className="mt-3 flex flex-col items-center gap-2 text-[14px]">
-      {finished && <Chip label="Result" value={`${match.homeScore} : ${match.awayScore}`} color={C.accentGold} />}
+      {finished && <Chip label={t('result')} value={`${match.homeScore} : ${match.awayScore}`} color={C.accentGold} />}
       {pick ? (
-        <Chip label="Your pick" value={`${pick.homeScore} : ${pick.awayScore}`} color={C.pitchGreen} />
+        <Chip label={t('yourPick')} value={`${pick.homeScore} : ${pick.awayScore}`} color={C.pitchGreen} />
       ) : (
-        <span className="text-white/55 text-[13px]">No prediction made</span>
+        <span className="text-white/55 text-[13px]">{t('noPrediction')}</span>
       )}
       {finished && pick?.pointsEarned != null && (
         <div className="mt-1 font-black text-[16px]" style={{ color: C.accentGold }}>
-          +{pick.pointsEarned} points
+          +{pick.pointsEarned} {t('pts')}
         </div>
       )}
     </div>

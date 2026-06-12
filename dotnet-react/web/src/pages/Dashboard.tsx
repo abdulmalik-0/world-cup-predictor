@@ -9,6 +9,7 @@ import { MatchCountdownBar } from '../components/MatchCountdownBar';
 import { DayFilterBar, type DayOption } from '../components/DayFilterBar';
 import { dayKey, dayLabel } from '../lib/time';
 import { useWindowSize } from '../hooks/useWindowSize';
+import { t, getLang } from '../i18n';
 
 const NAV_H = 66;
 
@@ -27,11 +28,15 @@ export function Dashboard() {
     [picksQ.data],
   );
 
+  const ar = getLang() === 'ar';
+  const loc = ar ? 'ar' : 'en';
+  const teamName = (en: string | null, arName: string) => (ar ? (arName ?? en) : (en ?? arName));
+
   const days: DayOption[] = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const m of matches) if (!seen.has(dayKey(m.kickoffAt))) seen.set(dayKey(m.kickoffAt), dayLabel(m.kickoffAt));
+    for (const m of matches) if (!seen.has(dayKey(m.kickoffAt))) seen.set(dayKey(m.kickoffAt), dayLabel(m.kickoffAt, loc));
     return [...seen].map(([key, label]) => ({ key, label }));
-  }, [matches]);
+  }, [matches, loc]);
 
   const nextMatch = matches.find((m) => m.status === 'scheduled') ?? matches[0];
   const filtered = selectedDay ? matches.filter((m) => dayKey(m.kickoffAt) === selectedDay) : matches;
@@ -50,7 +55,7 @@ export function Dashboard() {
         {nextMatch && (
           <MatchCountdownBar
             kickoffIso={nextMatch.kickoffAt}
-            title={`${nextMatch.homeTeamEn ?? nextMatch.homeTeam}  ×  ${nextMatch.awayTeamEn ?? nextMatch.awayTeam}`}
+            title={`${teamName(nextMatch.homeTeamEn, nextMatch.homeTeam)}  ×  ${teamName(nextMatch.awayTeamEn, nextMatch.awayTeam)}`}
           />
         )}
 
@@ -68,28 +73,27 @@ export function Dashboard() {
           >
             🏆
           </motion.span>
-          Upcoming Matches
+          {t('upcomingMatches')}
         </motion.h2>
-        <p className="text-[13px] text-white/55 -mt-2">
-          Pick a day to filter matches, or keep “All days”.
-        </p>
+        <p className="text-[13px] text-white/55 -mt-2">{t('pickDayHint')}</p>
 
-        <DayFilterBar days={days} selectedKey={selectedDay} onSelect={setSelectedDay} />
+        <DayFilterBar days={days} selectedKey={selectedDay} allDaysLabel={t('allDays')} onSelect={setSelectedDay} />
 
-        {matchesQ.isLoading && <p className="text-white/60">Loading…</p>}
-        {matchesQ.isError && <p className="text-red-300">Could not load matches.</p>}
+        {matchesQ.isLoading && <p className="text-white/60">{t('loading')}</p>}
+        {matchesQ.isError && <p className="text-red-300">{t('couldNotLoad')}</p>}
 
-        <MatchList matches={filtered} showHeaders={selectedDay === null} pickByMatch={pickByMatch} />
+        <MatchList matches={filtered} showHeaders={selectedDay === null} loc={loc} pickByMatch={pickByMatch} />
       </div>
     </main>
   );
 }
 
 function MatchList({
-  matches, showHeaders, pickByMatch,
+  matches, showHeaders, loc, pickByMatch,
 }: {
   matches: Match[];
   showHeaders: boolean;
+  loc: string;
   pickByMatch: Map<string, { id: string; matchId: string; homeScore: number; awayScore: number; pointsEarned: number | null; userId: string }>;
 }) {
   let lastDay = '';
@@ -97,7 +101,7 @@ function MatchList({
     <div>
       {matches.map((m) => {
         const k = dayKey(m.kickoffAt);
-        const header = showHeaders && k !== lastDay ? dayLabel(m.kickoffAt) : null;
+        const header = showHeaders && k !== lastDay ? dayLabel(m.kickoffAt, loc) : null;
         lastDay = k;
         return (
           <div key={m.id}>

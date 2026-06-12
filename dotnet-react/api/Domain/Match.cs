@@ -44,3 +44,16 @@ public class Profile
     [Column("department")] public string Department { get; set; } = "";
     [Column("is_admin")]   public bool IsAdmin { get; set; }
 }
+
+/// Read-only projection over the public.leaderboard view (keyless).
+public class LeaderboardRow
+{
+    [Column("user_id")]              public Guid UserId { get; set; }
+    [Column("full_name")]            public string FullName { get; set; } = "";
+    [Column("department")]           public string Department { get; set; } = "";
+    [Column("total_points")]         public int TotalPoints { get; set; }
+    [Column("predictions_made")]     public long PredictionsMade { get; set; }
+    [Column("finished_predictions")] public long FinishedPredictions { get; set; }
+    [Column("correct_predictions")]  public long CorrectPredictions { get; set; }
+    [Column("exact_predictions")]    public long ExactPredictions { get; set; }
+}

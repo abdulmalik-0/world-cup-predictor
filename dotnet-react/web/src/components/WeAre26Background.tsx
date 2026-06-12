@@ -20,13 +20,17 @@ export function WeAre26Background() {
         }}
       />
 
-      {/* 2) Pulsing gold glow behind the lockup. */}
+      {/* 2) Pulsing gold glow behind the lockup. The -50%/-50% centering is
+          part of the framer transform (Tailwind's -translate-* would be wiped
+          out by framer's scale animation). */}
       <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2"
         style={{
           width: '70vw',
           height: '50vh',
           borderRadius: '50%',
+          x: '-50%',
+          y: '-50%',
           background:
             'radial-gradient(circle, rgba(233,184,74,0.22) 0%, rgba(233,184,74,0) 70%)',
         }}
@@ -34,10 +38,10 @@ export function WeAre26Background() {
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* 3) WE ARE 26 lockup (breathing). */}
+      {/* 3) WE ARE 26 lockup (breathing), centered via framer x/y. */}
       <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-        style={{ width: '82vw', maxWidth: 980 }}
+        className="absolute left-1/2 top-1/2 flex flex-col items-center"
+        style={{ width: '82vw', maxWidth: 980, x: '-50%', y: '-50%' }}
         animate={{ scale: [1, 1.03, 1] }}
         transition={{ duration: 5.2, repeat: Infinity, ease: 'easeInOut' }}
       >

@@ -116,30 +116,52 @@ api.MapPut("/predictions/{matchId:guid}",
     return Results.Ok(pick);
 }).RequireAuthorization();
 
-// Leaderboard (uses the `leaderboard` view from migration 007).
+// Leaderboard — the `leaderboard` view (migration 007), via EF keyless entity.
+// Project to a plain shape (like /players) so serialization can't stall.
 api.MapGet("/leaderboard", async (AppDb db) =>
+    await db.Leaderboard
+        .OrderByDescending(x => x.TotalPoints)
+        .ThenByDescending(x => x.ExactPredictions)
+        .ThenByDescending(x => x.CorrectPredictions)
+        .Select(x => new
+        {
+            userId = x.UserId,
+            fullName = x.FullName,
+            department = x.Department,
+            totalPoints = x.TotalPoints,
+            predictionsMade = x.PredictionsMade,
+            finishedPredictions = x.FinishedPredictions,
+            correctPredictions = x.CorrectPredictions,
+            exactPredictions = x.ExactPredictions,
+        })
+        .ToListAsync());
+
+// A single player's stats (by id). Used by the My Stats page.
+api.MapGet("/leaderboard/{userId:guid}", async (Guid userId, AppDb db) =>
 {
-    var conn = db.Database.GetDbConnection();
-    await conn.OpenAsync();
-    using var cmd = conn.CreateCommand();
-    cmd.CommandText = "SELECT user_id, full_name, department, total_points, predictions_made, "
-                    + "correct_predictions, exact_predictions FROM public.leaderboard";
-    using var rdr = await cmd.ExecuteReaderAsync();
-    var rows = new List<object>();
-    while (await rdr.ReadAsync())
-    {
-        rows.Add(new {
-            userId             = rdr.GetGuid(0),
-            fullName           = rdr.GetString(1),
-            department         = rdr.GetString(2),
-            totalPoints        = rdr.GetInt32(3),
-            predictionsMade    = rdr.GetInt64(4),
-            correctPredictions = rdr.GetInt64(5),
-            exactPredictions   = rdr.GetInt64(6),
-        });
-    }
-    return Results.Ok(rows);
+    var row = await db.Leaderboard
+        .Where(x => x.UserId == userId)
+        .Select(x => new
+        {
+            userId = x.UserId,
+            fullName = x.FullName,
+            department = x.Department,
+            totalPoints = x.TotalPoints,
+            predictionsMade = x.PredictionsMade,
+            finishedPredictions = x.FinishedPredictions,
+            correctPredictions = x.CorrectPredictions,
+            exactPredictions = x.ExactPredictions,
+        })
+        .FirstOrDefaultAsync();
+    return row is null ? Results.NotFound() : Results.Ok(row);
 });
+
+// Lightweight roster so the UI can offer a "who am I" picker without a login.
+api.MapGet("/players", async (AppDb db) =>
+    await db.Profiles
+        .OrderBy(p => p.FullName)
+        .Select(p => new { id = p.Id, fullName = p.FullName, department = p.Department })
+        .ToListAsync());
 
 app.Run();
 
