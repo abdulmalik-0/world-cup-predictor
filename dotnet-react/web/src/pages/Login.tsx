@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { useLang, t } from '../i18n';
+import { useLang, toggleLang, t } from '../i18n';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 type Mode = 'signin' | 'signup';
 
@@ -12,7 +13,8 @@ const GREEN = 'linear-gradient(180deg, #2EE6A6 0%, #15CE8F 100%)';
  * card: the card height animates smoothly and the extra fields slide/fade in.
  */
 export function Login() {
-  useLang();
+  const lang = useLang();
+  const still = useReducedMotion();
   const [mode, setMode] = useState<Mode>('signin'); // default = Sign In
   const [fullName, setFullName] = useState('');
   const [department, setDepartment] = useState('');
@@ -58,6 +60,16 @@ export function Login() {
 
   return (
     <main className="min-h-[100svh] flex items-center justify-center px-4 py-12">
+      {/* Language toggle — available on the login screen too. */}
+      <button
+        onClick={toggleLang}
+        className="fixed top-4 right-4 z-10 h-9 w-9 rounded-full border border-emerald-400/50 text-[11px] font-extrabold
+                   flex items-center justify-center text-white hover:bg-white/10 transition"
+        aria-label="Toggle language"
+      >
+        {lang === 'en' ? 'عربي' : 'Eng'}
+      </button>
+
       <motion.form
         layout
         transition={{ layout: { type: 'spring', stiffness: 260, damping: 30 } }}
@@ -67,9 +79,48 @@ export function Login() {
       >
         {/* ── Logos (kept exactly as the app's existing assets) ── */}
         <motion.div layout="position" className="flex flex-col items-center">
-          <img src="/wc26_logo.png" alt="World Cup 2026" className="h-20 object-contain" />
-          <img src="/entergame_logo.png" alt="EnterGame" className="h-8 object-contain mt-3" />
-          <h1 className="text-xl font-extrabold mt-3">World Cup Arena</h1>
+          {/* WC26 emblem: entrance pop + soft gold glow + gentle float */}
+          <motion.div
+            className="relative"
+            initial={{ opacity: 0, scale: 0.82, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {!still && (
+              <motion.span
+                aria-hidden
+                className="absolute inset-0 -z-10 rounded-full blur-2xl"
+                style={{ background: 'radial-gradient(circle, rgba(233,184,74,0.45), transparent 70%)' }}
+                animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.85, 1.1, 0.85] }}
+                transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
+            <motion.img
+              src="/wc26_logo.png"
+              alt="World Cup 2026"
+              className="h-20 object-contain"
+              animate={still ? undefined : { y: [0, -5, 0] }}
+              transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </motion.div>
+
+          <motion.img
+            src="/entergame_logo.png"
+            alt="EnterGame"
+            className="h-8 object-contain mt-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
+          />
+          {/* "World Cup Arena" stays in English in both languages (not translated). */}
+          <motion.h1
+            className="text-xl font-extrabold mt-3"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.28, ease: 'easeOut' }}
+          >
+            World Cup Arena
+          </motion.h1>
           <AnimatePresence mode="wait">
             <motion.p
               key={mode}
