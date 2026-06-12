@@ -14,9 +14,10 @@ const LINKS = [
  */
 export function Navbar() {
   return (
-    <header className="fixed inset-x-0 top-0 z-40 h-[66px] bg-black/95 border-b border-white/10 px-3 sm:px-4 flex items-center text-white">
+    <header className="fixed inset-x-0 top-0 z-40 h-[66px] bg-black/95 border-b border-white/10 px-3 sm:px-4 flex items-center gap-2 sm:gap-3 text-white">
       <EnterGameLogo />
-      <LangChip />
+      {/* Desktop: language chip on the left, next to the logo. */}
+      <LangChip className="hidden md:flex" />
 
       {/* spacer that holds the morphing clip's landing spot */}
       <div className="flex-1" aria-hidden />
@@ -29,8 +30,11 @@ export function Navbar() {
         <LogoutButton className="ml-2" />
       </nav>
 
-      {/* Mobile: hamburger menu */}
-      <MobileMenu />
+      {/* Mobile: language chip + hamburger, both on the right. */}
+      <div className="flex items-center gap-2 md:hidden">
+        <LangChip />
+        <MobileMenu />
+      </div>
     </header>
   );
 }
@@ -43,7 +47,7 @@ function EnterGameLogo() {
   );
 }
 
-function LangChip() {
+function LangChip({ className = '' }: { className?: string }) {
   const lang = (localStorage.getItem('eg.lang') ?? 'en') as 'en' | 'ar';
   const toggle = () => {
     localStorage.setItem('eg.lang', lang === 'en' ? 'ar' : 'en');
@@ -52,7 +56,7 @@ function LangChip() {
   return (
     <button
       onClick={toggle}
-      className="ml-2 sm:ml-3 h-7 w-7 sm:h-8 sm:w-8 rounded-full border border-emerald-400/50 text-[10px] font-extrabold flex items-center justify-center hover:bg-white/10 shrink-0"
+      className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full border border-emerald-400/50 text-[10px] font-extrabold flex items-center justify-center hover:bg-white/10 shrink-0 ${className}`}
     >
       {lang === 'en' ? 'عربي' : 'Eng'}
     </button>
