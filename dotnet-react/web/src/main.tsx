@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import './index.css'
-import { applyDir } from './i18n'
+import { applyDir, useLang } from './i18n'
 import { Navbar } from './components/Navbar'
 import { MorphingHero } from './components/MorphingHero'
 import { WeAre26Background } from './components/WeAre26Background'
@@ -13,7 +13,7 @@ import { MyStats } from './pages/MyStats'
 import { PastMatches } from './pages/PastMatches'
 import { Toaster } from './lib/toast'
 
-// Apply text direction (rtl for Arabic) before first paint.
+// Set the lang attribute (dir stays LTR) before first paint.
 applyDir()
 
 const qc = new QueryClient({
@@ -21,6 +21,9 @@ const qc = new QueryClient({
 })
 
 function App() {
+  // Subscribe at the root: when the language flips, the whole tree re-renders
+  // in place (no reload / remount), so every t() picks up the new strings live.
+  useLang()
   return (
     <BrowserRouter>
       {/* Fixed branded background behind everything. */}

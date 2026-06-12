@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { t, setLang, getLang } from '../i18n';
+import { t, toggleLang, useLang } from '../i18n';
 
 const LINKS = [
   { to: '/dashboard', key: 'matches' as const },
@@ -50,15 +50,12 @@ function EnterGameLogo() {
 }
 
 function LangChip({ className = '' }: { className?: string }) {
-  const lang = getLang();
-  const toggle = () => {
-    setLang(lang === 'en' ? 'ar' : 'en');
-    location.reload();
-  };
+  const lang = useLang(); // re-renders this chip instantly on toggle
   return (
     <button
-      onClick={toggle}
+      onClick={toggleLang} // instant, client-side — no page reload
       className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full border border-emerald-400/50 text-[10px] font-extrabold flex items-center justify-center hover:bg-white/10 shrink-0 ${className}`}
+      aria-label="Toggle language"
     >
       {lang === 'en' ? 'عربي' : 'Eng'}
     </button>
