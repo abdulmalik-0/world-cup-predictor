@@ -1,30 +1,20 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { matchesApi } from '../api/matches';
 import type { LeaderboardEntry } from '../api/types';
 import { C } from '../lib/theme';
 import { hex } from '../components/CountdownBox';
-import { getUserId, setIdentity, clearIdentity } from '../lib/identity';
+import { getUserId } from '../lib/identity';
 import { t } from '../i18n';
 
 export function MyStats() {
-  const [userId, setUserId] = useState<string | null>(() => getUserId());
+  const userId = getUserId(); // the signed-in user
 
   const board = useQuery({ queryKey: ['leaderboard'], queryFn: matchesApi.leaderboard });
   const rows = board.data ?? [];
 
   const me = rows.find((r) => r.userId === userId) ?? null;
   const rank = me ? rows.findIndex((r) => r.userId === userId) + 1 : null;
-
-  const choose = (id: string, name: string) => {
-    setIdentity(id, name);
-    setUserId(id);
-  };
-  const reset = () => {
-    clearIdentity();
-    setUserId(null);
-  };
 
   return (
     <main className="pt-[86px] pb-20 px-4">
@@ -34,45 +24,19 @@ export function MyStats() {
           <h1 className="text-2xl font-extrabold">{t('myStats')}</h1>
         </header>
 
-        {!userId || !me ? (
-          <NamePicker onChoose={choose} loading={board.isLoading} />
+        {!me ? (
+          <p className="text-white/60">{t('loading')}</p>
         ) : (
-          <StatsView me={me} rank={rank!} total={rows.length} onChange={reset} />
+          <StatsView me={me} rank={rank!} total={rows.length} />
         )}
       </div>
     </main>
   );
 }
 
-function NamePicker({ onChoose, loading }: { onChoose: (id: string, name: string) => void; loading: boolean }) {
-  const players = useQuery({ queryKey: ['players'], queryFn: matchesApi.players });
-  return (
-    <div className="glass rounded-2xl p-5">
-      <p className="font-bold mb-3">{t('selectName')}</p>
-      <select
-        defaultValue=""
-        onChange={(e) => {
-          const p = (players.data ?? []).find((x) => x.id === e.target.value);
-          if (p) onChoose(p.id, p.fullName);
-        }}
-        className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-3 text-white outline-none focus:border-emerald-400"
-      >
-        <option value="" disabled>
-          {loading || players.isLoading ? t('loading') : t('chooseName')}
-        </option>
-        {(players.data ?? []).map((p) => (
-          <option key={p.id} value={p.id} className="bg-[#0B1118]">
-            {p.fullName} — {p.department}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 function StatsView({
-  me, rank, total, onChange,
-}: { me: LeaderboardEntry; rank: number; total: number; onChange: () => void }) {
+  me, rank, total,
+}: { me: LeaderboardEntry; rank: number; total: number }) {
   const accuracy = me.finishedPredictions > 0
     ? Math.round((me.correctPredictions / me.finishedPredictions) * 100)
     : 0;
@@ -94,9 +58,6 @@ function StatsView({
             {t('yourRank')}: {rank} / {total}
           </div>
         </div>
-        <button onClick={onChange} className="text-[12px] text-white/60 hover:text-white underline shrink-0">
-          {t('changeName')}
-        </button>
       </div>
 
       {/* Stat tiles */}

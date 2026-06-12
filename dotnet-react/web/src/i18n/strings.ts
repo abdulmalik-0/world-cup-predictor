@@ -81,6 +81,22 @@ export const STR = {
   predictingAs:   { en: 'Predicting as', ar: 'تتوقّع باسم' },
   change:         { en: 'change',       ar: 'تغيير' },
 
+  // Auth / login
+  signInTitle:    { en: 'Sign in to predict',   ar: 'سجّل دخولك للتوقّع' },
+  signUpTitle:    { en: 'Create your account',  ar: 'أنشئ حسابك' },
+  email:          { en: 'Email',        ar: 'البريد الإلكتروني' },
+  password:       { en: 'Password',     ar: 'كلمة المرور' },
+  fullNameField:  { en: 'Full name',    ar: 'الاسم الكامل' },
+  departmentField:{ en: 'Department',   ar: 'القسم' },
+  signInCta:      { en: 'Sign in',      ar: 'دخول' },
+  signUpCta:      { en: 'Create account', ar: 'إنشاء حساب' },
+  noAccount:      { en: "No account? Create one", ar: 'ليس لديك حساب؟ أنشئ واحداً' },
+  haveAccount:    { en: 'Already have an account? Sign in', ar: 'لديك حساب؟ سجّل الدخول' },
+  authError:      { en: 'Wrong email or password', ar: 'البريد أو كلمة المرور غير صحيحة' },
+  signUpDone:     { en: 'Account created — you can sign in now.', ar: 'تم إنشاء الحساب — تقدر تسجّل الدخول الآن.' },
+  signUpConfirm:  { en: 'Account created — check your email to confirm.', ar: 'تم إنشاء الحساب — تحقّق من بريدك للتأكيد.' },
+  working:        { en: 'Please wait…',  ar: 'لحظة من فضلك…' },
+
   // Leaderboard page
   standingsTitle: { en: 'Leaderboard',  ar: 'الترتيب' },
   standingsSub:   { en: 'Live standings — auto-updating', ar: 'الترتيب اللحظي — يتحدّث تلقائياً' },

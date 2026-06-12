@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { signOut } from '../lib/supabase';
 import { t, toggleLang, useLang } from '../i18n';
 
 const LINKS = [
@@ -90,10 +91,7 @@ function NavTab({ to, label, onClick }: { to: string; label: string; onClick?: (
 function LogoutButton({ className = '' }: { className?: string }) {
   return (
     <button
-      onClick={() => {
-        localStorage.removeItem('eg.token');
-        location.href = '/login';
-      }}
+      onClick={signOut}
       className={`p-2 rounded hover:bg-white/10 ${className}`}
       aria-label="Sign out"
     >
