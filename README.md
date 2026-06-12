@@ -1,149 +1,154 @@
-# تحدي مونديال الشركة (Company World Cup Predictor)
+# EnterGame · World Cup Arena 🏆
 
-تطبيق ويب متجاوب (Flutter Web + Supabase) لزيادة تفاعل الموظفين خلال كأس العالم عبر توقع نتائج المباريات وجدول ترتيب لحظي وسجل شفافية للتعديلات.
+A World Cup **2026** prediction game for company employees. Players predict
+match scores, earn points, and climb a live leaderboard — wrapped in the
+official FIFA WC26 “NY/NJ” look (the masked **26** hero, glass cards, FIFA‑style
+countdowns).
 
-## المتطلبات
+The repository contains two implementations of the same product:
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.16+)
-- [Supabase](https://supabase.com) — مشروع جديد
-- (اختياري) [Supabase CLI](https://supabase.com/docs/guides/cli)
+| Folder | Stack | Status |
+| --- | --- | --- |
+| `dotnet-react/` | **ASP.NET Core API + React (Vite + TS)** | ✅ active |
+| `lib/` , `web/` | Flutter Web (original) | maintained reference |
 
-## الإعداد السريع
+> This README focuses on the **.NET + React** edition under `dotnet-react/`.
 
-### 1. Supabase
+---
 
-1. أنشئ مشروعاً على Supabase.
-2. من **SQL Editor**، نفّذ الملف:
-   - `supabase/migrations/001_initial_schema.sql`
-3. (اختياري) نفّذ `supabase/seed.sql` لإضافة مباريات تجريبية.
-4. من **Authentication → Providers**:
-   - فعّل **Email**
-   - فعّل **Email + Password**
-   - **Confirm email = OFF** (دخول مباشر بدون رسالة تحقق)
-5. انسخ **Project URL** و **anon public key**.
+## ✨ Features
 
-### 2. Flutter
+- **Predictions** — pick a score for every match; locks **1 hour** before kickoff.
+- **Scoring** — exact score = **3 pts**, correct winner/draw = **1 pt**, wrong = 0.
+  **Saudi Arabia matches = double points.**
+- **Live leaderboard** + per‑player **Statistics** (view anyone’s stats).
+- **Past Matches** — final results and **everyone’s votes** (revealed only after
+  voting closes, so nobody can copy).
+- **Live results** synced from the free **ESPN** API (no key needed).
+- **Auth** — Supabase email/password **and Google sign‑in**; predictions are
+  written under **Row‑Level Security**, so you can only ever save your own.
+- **Bilingual** Arabic / English with an instant, no‑reload language switch.
+  Layout stays LTR and team names stay English in both languages.
+- **Signature UI** — the “26 NEW YORK NEW JERSEY” video clip masked into the
+  lockup, morphing from a full‑screen hero into the navbar on scroll; tuned for
+  mobile performance (heavy animations/blur disabled on small screens).
+
+---
+
+## 🧱 Architecture
+
+```
+React (Vite + TS + Tailwind + Framer Motion)
+  ├─ Auth + prediction writes ─────────────►  Supabase (Auth + Postgres RLS)
+  └─ Matches / leaderboard / votes ────────►  ASP.NET Core API (EF Core)
+                                                    └─►  Supabase Postgres
+ESPN public API ──►  background worker / edge function  ──►  matches table
+```
+
+- **API** (`dotnet-react/api`) — ASP.NET Core minimal APIs, EF Core over the
+  Supabase Postgres (session pooler), and a background worker that pulls scores
+  from ESPN every 10 minutes.
+- **Web** (`dotnet-react/web`) — React 19 + Vite, Tailwind, Framer Motion,
+  TanStack Query, React Router, Supabase JS.
+- **Database** — Supabase Postgres with RLS; predictions / leaderboard / profile
+  schema lives in `supabase/migrations`.
+
+---
+
+## 🚀 Getting started
+
+### Prerequisites
+- .NET SDK **10**
+- Node **20+**
+- A Supabase project (URL + anon key; the API also needs the Postgres
+  connection string)
+
+### 1) Configure secrets (all git‑ignored)
+
+`dotnet-react/web/.env`
+```
+VITE_API_BASE=http://localhost:5080/api
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>
+```
+
+`dotnet-react/api/appsettings.Development.json`
+```json
+{
+  "ConnectionStrings": {
+    "Postgres": "Host=aws-1-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<project-ref>;Password=<db-password>;SslMode=Require;Trust Server Certificate=true"
+  },
+  "Jwt": { "Key": "<random-secret>" }
+}
+```
+> Use the **session pooler** (port `5432`), not the transaction pooler.
+
+### 2) Run everything
 
 ```bash
-# انسخ env.example.json إلى env.json وضع مفاتيح Supabase
-cp env.example.json env.json
-
-cd "World Cup Predictor"
-flutter pub get
-flutter run -d chrome --web-port=8080 --dart-define-from-file=env.json
+./start-all.sh
+#  API → http://localhost:5080  (Swagger at /swagger)
+#  Web → http://localhost:5173
 ```
 
-للبناء للإنتاج:
-
+Or individually:
 ```bash
-flutter build web --release --dart-define-from-file=env.json
+cd dotnet-react/api && dotnet run
+cd dotnet-react/web && npm install && npm run dev
 ```
 
-ثم ارفع **مجلد `build/web` كاملاً** (يحتوي `assets/assets/images/` للخلفية والشعار).
+---
 
-### صور التطبيق (مهم للنشر)
+## ⚙️ Setup notes
 
-| الملف | الاستخدام |
-|-------|-----------|
-| `assets/images/wc26_logo.png` | شعار كأس العالم (تسجيل الدخول + بطاقة المباراة) |
-| `assets/images/background.png` | خلفية الأعلام |
+- **Google sign‑in** — enable the Google provider in *Supabase → Auth →
+  Providers*, add a Google Cloud OAuth client whose redirect URI is
+  `https://<project-ref>.supabase.co/auth/v1/callback`, and add your app URLs
+  under *Auth → URL Configuration*.
+- **ESPN auto‑sync** — deploy the edge function and schedule it:
+  ```bash
+  supabase functions deploy sync-results-espn
+  # then run supabase/migrations/012_espn_sync_cron.sql (pg_cron, every 10 min)
+  ```
+- **Schema** — apply `supabase/migrations/*.sql` (matches, predictions,
+  leaderboard view, RLS, prediction‑window trigger, Saudi double points).
 
-إذا لم تُضمَّن الصور في البناء → تظهر خلفية متدرّجة وأيقونة بديلة.
+---
 
-### Docker (على السيرفر)
-
-```bash
-cp .env.docker.example .env.docker
-# عدّل SUPABASE_URL و SUPABASE_ANON_KEY في .env.docker
-
-docker compose --env-file .env.docker up -d --build
-```
-
-الـ Dockerfile يبني Flutter داخل الحاوية ويضمّن الصور تلقائياً (لا يعتمد على `build/` المحلي).
-
-## آلية النقاط (على السيرفر)
-
-| الحالة | مباراة عادية | مباراة السعودية (دبل 🔥) |
-|--------|-------------|----------------------|
-| النتيجة بالظبط | 3 | 6 |
-| الفائز / التعادل | 1 | 2 |
-| خطأ | 0 | 0 |
-
-- يُغلق التوقع **ساعة** قبل صافرة البداية.
-- التعديل مسموح قبل الإغلاق، ويُسجّل في `prediction_history`.
-- بعد الإغلاق، تظهر توقعات الجميع في صفحة **الطقطقة**.
-
-## هيكل المشروع
+## 📁 Layout
 
 ```
-lib/
-├── core/          # إعدادات، ثيم، توجيه، منطق مساعد
-├── features/      # auth, dashboard, leaderboard, insights
-├── models/
-├── providers/     # Riverpod
-└── services/      # Supabase API
-supabase/
-├── migrations/    # مخطط قاعدة البيانات + triggers + RLS
-└── seed.sql
+dotnet-react/
+├── api/                 ASP.NET Core API (EF Core + ESPN worker)
+│   ├── Domain/  Data/  Services/  Program.cs
+└── web/                 React app
+    └── src/
+        ├── pages/       Login · Dashboard · Leaderboard · MyStats · PastMatches
+        ├── components/  MatchCard · MorphingHero · WcMask · modals …
+        ├── lib/         supabase · theme · teams · time · toast
+        └── i18n/        en / ar strings + reactive store
+supabase/                migrations + edge functions (ESPN sync)
+lib/ , web/              original Flutter Web app
 ```
 
-## المشرف (Admin)
+---
 
-1. نفّذ الترحيل `supabase/migrations/003_admin_and_sync.sql` (يضيف دور المشرف + صلاحيات RLS + عمود `external_ref`).
-2. عيّن نفسك مشرفاً (مرة واحدة) من SQL Editor:
+## 🎯 Scoring
 
-```sql
-UPDATE public.profiles SET is_admin = true
-WHERE id = (SELECT id FROM auth.users WHERE email = 'you@company.com');
-```
+| Outcome | Points |
+| --- | --- |
+| Exact score | **3** |
+| Correct winner / draw | **1** |
+| Wrong | 0 |
+| 🔥 Saudi Arabia match | **doubled** |
 
-3. بعد إعادة الدخول تظهر أيقونة **لوحة التحكم** في الشريط العلوي — منها تضيف المباريات وتُدخل النتائج مباشرة (يحسب المحفّز النقاط تلقائياً).
+Points are computed automatically when ESPN marks a match finished.
 
-## مزامنة النتائج تلقائياً (API)
+---
 
-دالة `supabase/functions/sync-results` تجلب مباريات **كأس العالم فقط** من [football-data.org](https://www.football-data.org) (`competitions/WC?season=2026`) وتربطها بجدول `matches` تلقائياً (حسب الفرق + وقت البداية)، ثم تحدّث النتائج عند انتهاء المباراة.
+## 🔐 Security
 
-> ⚠️ مفتاح الـ API و `service_role` يبقيان **على الخادم فقط** (سرّ Supabase) — لا يوضعان في تطبيق الويب.
-
-```powershell
-# 1) انسخ supabase/.env.example إلى supabase/.env وضع مفتاحك
-# 2) ارفع الأسرار وانشر الدالة:
-powershell -ExecutionPolicy Bypass -File .\tool\set_football_secrets.ps1
-supabase functions deploy sync-results
-```
-
-يمكن أيضاً ربط مباراة يدوياً بحقل **معرّف الـ API** في لوحة التحكم. جدوِل التشغيل (كل ١٠ دقائق مثلاً) عبر pg_cron أو cron خارجي يستدعي رابط الدالة.
-
-## إدارة المباريات
-
-أضف/حدّث المباريات من **لوحة التحكم داخل الموقع** (الأسهل)، أو من Supabase Dashboard / SQL:
-
-```sql
-INSERT INTO matches (home_team, away_team, home_team_code, away_team_code, kickoff_at)
-VALUES ('السعودية', 'المكسيك', 'SA', 'MX', '2026-06-15 18:00:00+00');
-```
-
-عند انتهاء المباراة، حدّث النتيجة:
-
-```sql
-UPDATE matches
-SET home_score = 2, away_score = 1, status = 'finished'
-WHERE id = '...';
-```
-
-النقاط تُحسب تلقائياً عبر trigger على السيرفر.
-
-## الجوائز
-
-قسم الجوائز جاهز للإضافة لاحقاً من إدارة الشركة (يمكن ربطه بجدول `rewards` أو صفحة إدارية).
-
-## الاختبارات
-
-```bash
-flutter test
-```
-
-## ملاحظات
-
-- Flutter غير مثبت على هذا الجهاز حالياً — ثبّته ثم نفّذ `flutter pub get`.
-- للإنتاج: فعّل RLS policies كما هي، واستخدم Service Role فقط من backend/admin.
+- No secrets are committed — `.env`, `appsettings.Development.json`, and
+  `CREDENTIALS.md` are git‑ignored.
+- Prediction writes go through Supabase **RLS** (`auth.uid() = user_id`).
+- Others’ picks are hidden until the voting window closes.
