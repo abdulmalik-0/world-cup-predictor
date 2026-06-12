@@ -7,9 +7,10 @@ import { C } from '../lib/theme';
 import { flagUrl, jerseyColor, isSaudi as isSaudiCode } from '../lib/teams';
 import { isPredictionOpen, untilLock, formatKickoff } from '../lib/time';
 import { useNow } from '../hooks/useNow';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { CountdownBox, hex } from './CountdownBox';
 import { PredictionsModal } from './PredictionsModal';
-import { t, getLang } from '../i18n';
+import { t } from '../i18n';
 
 const MAX = 30;
 
@@ -20,7 +21,10 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   const [showPicks, setShowPicks] = useState(false);
   const savedTimer = useRef<number | undefined>(undefined);
   const qc = useQueryClient();
-  const now = useNow();
+  const still = useReducedMotion();
+  // Coarse clock for the card body (lock state flips at most once); the live
+  // per-second countdown lives in <ClockTab> so it doesn't re-render the card.
+  const now = useNow(still ? 30000 : 15000);
 
   useEffect(() => {
     setHome(pick?.homeScore ?? 0);
@@ -42,16 +46,16 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
     },
   });
 
-  const ar = getLang() === 'ar';
-  const homeName = ar ? (match.homeTeam ?? match.homeTeamEn) : (match.homeTeamEn ?? match.homeTeam);
-  const awayName = ar ? (match.awayTeam ?? match.awayTeamEn) : (match.awayTeamEn ?? match.awayTeam);
+  // Team names stay English regardless of the UI language.
+  const homeName = match.homeTeamEn ?? match.homeTeam;
+  const awayName = match.awayTeamEn ?? match.awayTeam;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={still ? false : { opacity: 0, y: 16 }}
+      whileInView={still ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       className="glass rounded-[18px] px-3.5 pt-4 pb-4 mb-4"
     >
       {/* ── Broadcast score bug (always LTR: home → away) ── */}
@@ -60,9 +64,9 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
           <div className="overflow-hidden rounded-2xl flex h-[70px]" style={{ background: C.codeBg }}>
             <div style={{ width: 5, background: jerseyColor(match.homeTeamCode) }} />
             <Flag code={match.homeTeamCode} />
-            <ScoreCell value={home} onChange={setHome} open={open} />
+            <ScoreCell value={home} onChange={setHome} open={open} animate={!still} />
             <CenterBadge />
-            <ScoreCell value={away} onChange={setAway} open={open} />
+            <ScoreCell value={away} onChange={setAway} open={open} animate={!still} />
             <Flag code={match.awayTeamCode} />
             <div style={{ width: 5, background: jerseyColor(match.awayTeamCode) }} />
           </div>
@@ -72,13 +76,13 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
               className="absolute -top-4"
               style={isSaudiCode(match.homeTeamCode) ? { left: 24 } : { right: 24 }}
             >
-              <DoubleBadge />
+              <DoubleBadge still={still} />
             </div>
           )}
         </div>
 
         <div className="-mt-px flex justify-center">
-          <ClockTab kickoffIso={match.kickoffAt} open={open} now={now} />
+          <ClockTab kickoffIso={match.kickoffAt} open={open} />
         </div>
       </div>
 
@@ -136,8 +140,10 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   );
 }
 
-function ScoreCell({ value, onChange, open }: { value: number; onChange: (n: number) => void; open: boolean }) {
-  const number = (
+function ScoreCell({
+  value, onChange, open, animate,
+}: { value: number; onChange: (n: number) => void; open: boolean; animate: boolean }) {
+  const number = animate ? (
     <motion.div
       key={value}
       initial={{ scale: 1.35 }}
@@ -148,6 +154,8 @@ function ScoreCell({ value, onChange, open }: { value: number; onChange: (n: num
     >
       {value}
     </motion.div>
+  ) : (
+    <div className="text-white font-black" style={{ fontSize: 30, lineHeight: 1 }}>{value}</div>
   );
   return (
     <div className="flex flex-col items-center justify-center" style={{ width: 56, background: C.scoreBg }}>
@@ -211,8 +219,13 @@ function CenterBadge() {
   );
 }
 
-/** Green glassy clock tab (or red "Closed" tab) hanging below the bug. */
-function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean; now: number }) {
+/**
+ * Green clock tab (or red "Closed" tab) hanging below the bug. Owns its OWN
+ * 1-second timer so only this tiny element re-renders each tick — not the whole
+ * (expensive, glassy) card.
+ */
+function ClockTab({ kickoffIso, open }: { kickoffIso: string; open: boolean }) {
+  const now = useNow(open ? 1000 : 60000);
   if (!open) {
     return (
       <div
@@ -230,9 +243,8 @@ function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean
       className="flex items-end gap-1 px-2 pt-[5px] pb-1.5"
       style={{
         borderRadius: '0 0 12px 12px',
-        background: `linear-gradient(135deg, ${hex(C.blueAccent, 0.18)}, rgba(255,255,255,0.04))`,
+        background: `linear-gradient(135deg, ${hex(C.blueAccent, 0.2)}, rgba(20,28,40,0.9))`,
         border: `1px solid ${hex(C.blueAccent, 0.3)}`,
-        backdropFilter: 'blur(14px)',
       }}
     >
       <CountdownBox size="tab" value={time.days} label={t('days')} />
@@ -243,10 +255,10 @@ function ClockTab({ kickoffIso, open, now }: { kickoffIso: string; open: boolean
   );
 }
 
-function DoubleBadge() {
+function DoubleBadge({ still }: { still: boolean }) {
   return (
     <motion.div
-      animate={{ scale: [1, 1.08, 1] }}
+      animate={still ? undefined : { scale: [1, 1.08, 1] }}
       transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
       className="px-2.5 py-1 rounded-[10px] font-black text-[11px] whitespace-nowrap"
       style={{

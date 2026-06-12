@@ -4,6 +4,7 @@ import { t, setLang, getLang } from '../i18n';
 
 const LINKS = [
   { to: '/dashboard', key: 'matches' as const },
+  { to: '/past', key: 'pastMatches' as const },
   { to: '/leaderboard', key: 'leaderboard' as const },
   { to: '/stats', key: 'myStats' as const },
 ];

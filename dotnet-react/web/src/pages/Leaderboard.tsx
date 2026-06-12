@@ -1,14 +1,19 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { matchesApi } from '../api/matches';
 import type { LeaderboardEntry } from '../api/types';
 import { C } from '../lib/theme';
 import { hex } from '../components/CountdownBox';
+import { UserHistoryModal } from '../components/UserHistoryModal';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { t } from '../i18n';
 
 export function Leaderboard() {
   const q = useQuery({ queryKey: ['leaderboard'], queryFn: matchesApi.leaderboard });
   const rows = q.data ?? [];
+  const still = useReducedMotion();
+  const [selected, setSelected] = useState<LeaderboardEntry | null>(null);
 
   return (
     <main className="pt-[86px] pb-20 px-4">
@@ -27,23 +32,35 @@ export function Leaderboard() {
 
         <div className="space-y-2">
           {rows.map((r, i) => (
-            <Row key={r.userId} entry={r} rank={i + 1} />
+            <Row key={r.userId} entry={r} rank={i + 1} still={still} onClick={() => setSelected(r)} />
           ))}
         </div>
       </div>
+
+      {selected && (
+        <UserHistoryModal
+          userId={selected.userId}
+          fullName={selected.fullName}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </main>
   );
 }
 
-function Row({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
+function Row({
+  entry, rank, still, onClick,
+}: { entry: LeaderboardEntry; rank: number; still: boolean; onClick: () => void }) {
   const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
   const top3 = rank <= 3;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(rank * 0.025, 0.4) }}
-      className="glass rounded-2xl px-3 py-3 flex items-center gap-3"
+    <motion.button
+      onClick={onClick}
+      initial={still ? false : { opacity: 0, y: 10 }}
+      whileInView={still ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.25, delay: still ? 0 : Math.min(rank * 0.02, 0.3) }}
+      className="glass rounded-2xl px-3 py-3 flex items-center gap-3 w-full text-start hover:brightness-110 transition"
       style={top3 ? { border: `1px solid ${hex(C.accentGold, 0.5)}` } : undefined}
     >
       <div
@@ -72,7 +89,7 @@ function Row({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
         </div>
         <div className="text-[11px] text-white/50">{t('pts')}</div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 

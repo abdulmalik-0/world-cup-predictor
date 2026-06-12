@@ -1,14 +1,22 @@
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 /**
  * "WE ARE 26" branded app background — ported from the Flutter
  * AnimatedBackground: black radial base, a pulsing gold glow, the bold
- * WE-ARE-26 lockup (with a real gold trophy between the digits + shimmer),
- * and a vignette scrim so foreground content stays readable.
+ * WE-ARE-26 lockup (with a real gold trophy between the digits), and a
+ * vignette scrim so foreground content stays readable.
  *
- * Rendered FIXED behind everything (pointer-events: none).
+ * Rendered FIXED behind everything (pointer-events: none). On mobile / reduced
+ * motion the infinite glow + breathing loops are OFF (rendered static) to keep
+ * the compositor idle.
  */
 export function WeAre26Background() {
+  const still = useReducedMotion();
+  // Pulsing glow loop — disabled when motion is reduced.
+  const glowAnim = still ? undefined : { scale: [0.9, 1.12, 0.9], opacity: [0.7, 1, 0.7] };
+  const lockupAnim = still ? undefined : { scale: [1, 1.03, 1] };
+
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none">
       {/* 1) Black base with a subtle warm center. */}
@@ -20,9 +28,7 @@ export function WeAre26Background() {
         }}
       />
 
-      {/* 2) Pulsing gold glow behind the lockup. The -50%/-50% centering is
-          part of the framer transform (Tailwind's -translate-* would be wiped
-          out by framer's scale animation). */}
+      {/* 2) Gold glow behind the lockup. */}
       <motion.div
         className="absolute left-1/2 top-1/2"
         style={{
@@ -34,15 +40,15 @@ export function WeAre26Background() {
           background:
             'radial-gradient(circle, rgba(233,184,74,0.22) 0%, rgba(233,184,74,0) 70%)',
         }}
-        animate={{ scale: [0.9, 1.12, 0.9], opacity: [0.7, 1, 0.7] }}
+        animate={glowAnim}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* 3) WE ARE 26 lockup (breathing), centered via framer x/y. */}
+      {/* 3) WE ARE 26 lockup, centered via framer x/y. */}
       <motion.div
         className="absolute left-1/2 top-1/2 flex flex-col items-center"
         style={{ width: '82vw', maxWidth: 980, x: '-50%', y: '-50%' }}
-        animate={{ scale: [1, 1.03, 1] }}
+        animate={lockupAnim}
         transition={{ duration: 5.2, repeat: Infinity, ease: 'easeInOut' }}
       >
         <div

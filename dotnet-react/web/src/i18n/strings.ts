@@ -58,6 +58,18 @@ export const STR = {
   couldNotLoad:   { en: 'Could not load matches.',  ar: 'تعذّر تحميل المباريات.' },
   allDays:        { en: 'All days',     ar: 'جميع الأيام' },
   noMatches:      { en: 'No upcoming matches',  ar: 'لا توجد مباريات قادمة' },
+  loadMore:       { en: 'Load more',    ar: 'عرض المزيد' },
+
+  // Past matches
+  pastMatches:    { en: 'Past Matches', ar: 'المباريات السابقة' },
+  noFinished:     { en: 'No finished matches yet', ar: 'لا توجد مباريات منتهية بعد' },
+  finalResult:    { en: 'Final',        ar: 'النتيجة النهائية' },
+  tapToSeeVotes:  { en: 'Tap to see everyone’s votes', ar: 'اضغط لعرض توقعات الجميع' },
+
+  // Leaderboard user history
+  history:        { en: 'Prediction history',  ar: 'سجل التوقعات' },
+  theirPick:      { en: 'Pick',         ar: 'التوقع' },
+  noHistory:      { en: 'No predictions yet',   ar: 'لا توجد توقعات بعد' },
 
   // Leaderboard page
   standingsTitle: { en: 'Leaderboard',  ar: 'الترتيب' },

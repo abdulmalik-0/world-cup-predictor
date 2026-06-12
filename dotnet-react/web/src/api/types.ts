@@ -56,6 +56,24 @@ export interface MatchPicksResponse {
   predictions: MatchPick[];
 }
 
+/** One row of a user's prediction history (match + their pick + result). */
+export interface UserPick {
+  matchId: string;
+  homeTeam: string;
+  homeTeamEn: string | null;
+  homeTeamCode: string;
+  awayTeam: string;
+  awayTeamEn: string | null;
+  awayTeamCode: string;
+  kickoffAt: string;
+  status: MatchStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+  predHome: number;
+  predAway: number;
+  pointsEarned: number | null;
+}
+
 export interface AuthResponse {
   token: string;
   userId: string;

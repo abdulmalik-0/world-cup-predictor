@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { matchesApi } from '../api/matches';
@@ -9,12 +9,17 @@ import { MatchCountdownBar } from '../components/MatchCountdownBar';
 import { DayFilterBar, type DayOption } from '../components/DayFilterBar';
 import { dayKey, dayLabel } from '../lib/time';
 import { useWindowSize } from '../hooks/useWindowSize';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+import { C } from '../lib/theme';
 import { t, getLang } from '../i18n';
 
 const NAV_H = 66;
+const PAGE = 10; // matches shown initially / per "Load more"
 
 export function Dashboard() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [visible, setVisible] = useState(PAGE);
+  const still = useReducedMotion();
 
   const matchesQ = useQuery({ queryKey: ['matches'], queryFn: matchesApi.upcoming });
   const picksQ = useQuery({ queryKey: ['picks'], queryFn: matchesApi.myPicks, retry: false });
@@ -28,9 +33,9 @@ export function Dashboard() {
     [picksQ.data],
   );
 
-  const ar = getLang() === 'ar';
-  const loc = ar ? 'ar' : 'en';
-  const teamName = (en: string | null, arName: string) => (ar ? (arName ?? en) : (en ?? arName));
+  const loc = getLang() === 'ar' ? 'ar' : 'en';
+  // Team names stay English regardless of UI language (only labels translate).
+  const teamName = (en: string | null, arName: string) => en ?? arName;
 
   const days: DayOption[] = useMemo(() => {
     const seen = new Map<string, string>();
@@ -40,6 +45,12 @@ export function Dashboard() {
 
   const nextMatch = matches.find((m) => m.status === 'scheduled') ?? matches[0];
   const filtered = selectedDay ? matches.filter((m) => dayKey(m.kickoffAt) === selectedDay) : matches;
+
+  // Lazy load: only render the first `visible` matches; reset when the filter
+  // changes. Keeps the initial DOM small (fewer cards = fewer timers/paints).
+  useEffect(() => { setVisible(PAGE); }, [selectedDay]);
+  const shown = filtered.slice(0, visible);
+  const hasMore = filtered.length > visible;
 
   // Spacer = morph distance, so content rises into place as the clip lands.
   const { h: vh } = useWindowSize();
@@ -61,20 +72,15 @@ export function Dashboard() {
 
         <ScoringRulesCard />
 
-        <motion.h2
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="flex items-center gap-2 text-2xl font-extrabold"
-        >
+        <h2 className="flex items-center gap-2 text-2xl font-extrabold">
           <motion.span
-            animate={{ scale: [1, 1.18, 1], rotate: [-2, 2, -2] }}
+            animate={still ? undefined : { scale: [1, 1.18, 1], rotate: [-2, 2, -2] }}
             transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
           >
             🏆
           </motion.span>
           {t('upcomingMatches')}
-        </motion.h2>
+        </h2>
         <p className="text-[13px] text-white/55 -mt-2">{t('pickDayHint')}</p>
 
         <DayFilterBar days={days} selectedKey={selectedDay} allDaysLabel={t('allDays')} onSelect={setSelectedDay} />
@@ -82,7 +88,17 @@ export function Dashboard() {
         {matchesQ.isLoading && <p className="text-white/60">{t('loading')}</p>}
         {matchesQ.isError && <p className="text-red-300">{t('couldNotLoad')}</p>}
 
-        <MatchList matches={filtered} showHeaders={selectedDay === null} loc={loc} pickByMatch={pickByMatch} />
+        <MatchList matches={shown} showHeaders={selectedDay === null} loc={loc} pickByMatch={pickByMatch} />
+
+        {hasMore && (
+          <button
+            onClick={() => setVisible((v) => v + PAGE)}
+            className="w-full py-3 rounded-xl font-bold border transition hover:bg-white/5"
+            style={{ borderColor: C.pitchGreen, color: C.pitchGreen }}
+          >
+            {t('loadMore')} ({filtered.length - visible})
+          </button>
+        )}
       </div>
     </main>
   );

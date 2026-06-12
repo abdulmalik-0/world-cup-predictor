@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { C } from '../lib/theme';
 import { untilKickoff } from '../lib/time';
 import { useNow } from '../hooks/useNow';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { CountdownBox, hex } from './CountdownBox';
 import { t } from '../i18n';
 
@@ -10,12 +11,13 @@ export function MatchCountdownBar({ kickoffIso, title }: { kickoffIso: string; t
   const now = useNow();
   const time = untilKickoff(kickoffIso, now);
   const live = time.negative;
+  const still = useReducedMotion();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      initial={still ? false : { opacity: 0, y: 14 }}
+      animate={still ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
       className="flex items-center gap-3 px-3.5 py-3 rounded-2xl"
       style={{
         background: `linear-gradient(${C.navyTop}, ${C.navyBottom})`,

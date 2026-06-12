@@ -6,7 +6,7 @@ import { matchesApi } from '../api/matches';
 import { C } from '../lib/theme';
 import { hex } from './CountdownBox';
 import { isPredictionOpen } from '../lib/time';
-import { t, getLang } from '../i18n';
+import { t } from '../i18n';
 
 /**
  * Bottom-sheet modal listing everyone's picks for a match. The server only
@@ -17,7 +17,6 @@ import { t, getLang } from '../i18n';
 export function PredictionsModal({ match, onClose }: { match: Match; onClose: () => void }) {
   const open = isPredictionOpen(match.kickoffAt);
   const meId = localStorage.getItem('eg.userId');
-  const ar = getLang() === 'ar';
 
   const q = useQuery({
     queryKey: ['matchPicks', match.id],
@@ -26,8 +25,9 @@ export function PredictionsModal({ match, onClose }: { match: Match; onClose: ()
 
   const picks = q.data?.predictions ?? [];
   const finished = q.data?.finished ?? false;
-  const home = ar ? match.homeTeam : (match.homeTeamEn ?? match.homeTeam);
-  const away = ar ? match.awayTeam : (match.awayTeamEn ?? match.awayTeam);
+  // Team names stay English regardless of UI language.
+  const home = match.homeTeamEn ?? match.homeTeam;
+  const away = match.awayTeamEn ?? match.awayTeam;
 
   return createPortal(
     <AnimatePresence>

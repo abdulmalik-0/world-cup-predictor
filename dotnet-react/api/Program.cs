@@ -89,6 +89,12 @@ api.MapGet("/matches/upcoming", async (AppDb db) =>
         .Where(m => m.Status == "scheduled" || m.Status == "live")
         .OrderBy(m => m.KickoffAt).ToListAsync());
 
+// Finished matches (most recent first) — powers the "Past Matches" tab.
+api.MapGet("/matches/finished", async (AppDb db) =>
+    await db.Matches
+        .Where(m => m.Status == "finished")
+        .OrderByDescending(m => m.KickoffAt).ToListAsync());
+
 // Predictions
 api.MapGet("/predictions/mine", [Authorize] async (ClaimsPrincipal user, AppDb db) =>
 {
@@ -148,6 +154,29 @@ api.MapGet("/matches/{matchId:guid}/predictions", async (Guid matchId, AppDb db)
         }).ToListAsync();
 
     return Results.Ok(new { locked = true, finished = match.Status == "finished", predictions });
+});
+
+// One player's prediction history — only matches whose voting window has closed
+// (never leak someone's still-open picks). Used by the leaderboard history modal.
+api.MapGet("/players/{userId:guid}/predictions", async (Guid userId, AppDb db) =>
+{
+    var cutoff = DateTime.UtcNow.AddHours(1); // kickoff <= now+1h  ⇒  locked
+    var rows = await (
+        from p in db.Predictions
+        join m in db.Matches on p.MatchId equals m.Id
+        where p.UserId == userId && m.KickoffAt <= cutoff
+        orderby m.KickoffAt descending
+        select new
+        {
+            matchId = m.Id,
+            homeTeam = m.HomeTeam, homeTeamEn = m.HomeTeamEn, homeTeamCode = m.HomeTeamCode,
+            awayTeam = m.AwayTeam, awayTeamEn = m.AwayTeamEn, awayTeamCode = m.AwayTeamCode,
+            kickoffAt = m.KickoffAt, status = m.Status,
+            homeScore = m.HomeScore, awayScore = m.AwayScore,
+            predHome = p.HomeScore, predAway = p.AwayScore,
+            pointsEarned = p.PointsEarned,
+        }).ToListAsync();
+    return Results.Ok(rows);
 });
 
 // Leaderboard — the `leaderboard` view (migration 007), via EF keyless entity.

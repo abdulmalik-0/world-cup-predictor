@@ -10,6 +10,7 @@ import { WeAre26Background } from './components/WeAre26Background'
 import { Dashboard } from './pages/Dashboard'
 import { Leaderboard } from './pages/Leaderboard'
 import { MyStats } from './pages/MyStats'
+import { PastMatches } from './pages/PastMatches'
 
 // Apply text direction (rtl for Arabic) before first paint.
 applyDir()
@@ -27,6 +28,7 @@ function App() {
       <MorphingHero />
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/past" element={<PastMatches />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/stats" element={<MyStats />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

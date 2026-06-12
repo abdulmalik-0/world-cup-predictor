@@ -15,7 +15,10 @@ export function setLang(lang: Lang) {
 export function applyDir(lang: Lang = getLang()) {
   if (typeof document === 'undefined') return;
   document.documentElement.lang = lang;
-  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  // Layout stays LTR in BOTH languages — only the text translates. This keeps
+  // every element (logo, nav, score bug) in the exact same place when Arabic
+  // is selected, instead of mirroring the whole UI.
+  document.documentElement.dir = 'ltr';
 }
 
 /** Translate a key for the current language. */
@@ -34,5 +37,5 @@ export function localeTag(): string {
  */
 export function useI18n() {
   const lang = getLang();
-  return { lang, t, dir: lang === 'ar' ? ('rtl' as const) : ('ltr' as const) };
+  return { lang, t, dir: 'ltr' as const };
 }

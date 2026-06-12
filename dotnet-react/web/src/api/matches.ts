@@ -1,9 +1,14 @@
 import { api } from './client';
-import type { LeaderboardEntry, Match, MatchPicksResponse, Player, Prediction } from './types';
+import type {
+  LeaderboardEntry, Match, MatchPicksResponse, Player, Prediction, UserPick,
+} from './types';
 
 export const matchesApi = {
   upcoming:    () => api.get<Match[]>('/matches/upcoming').then(r => r.data),
+  finished:    () => api.get<Match[]>('/matches/finished').then(r => r.data),
   all:         () => api.get<Match[]>('/matches').then(r => r.data),
+  playerHistory: (userId: string) =>
+                 api.get<UserPick[]>(`/players/${userId}/predictions`).then(r => r.data),
   myPicks:     () => api.get<Prediction[]>('/predictions/mine').then(r => r.data),
   savePick:    (matchId: string, home: number, away: number) =>
                  api.put<Prediction>(`/predictions/${matchId}`, { homeScore: home, awayScore: away }).then(r => r.data),
