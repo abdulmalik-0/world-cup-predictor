@@ -15,6 +15,7 @@ export function WcMask({
   videoSrc = '/hero.mp4',
   posterSrc = '/hero-poster.webp',
   whiteOpacity = 0,
+  still = false,
   variant = 'horizontal',
   className,
   style,
@@ -22,6 +23,8 @@ export function WcMask({
   videoSrc?: string;
   posterSrc?: string;
   whiteOpacity?: number;
+  /** Paint the still poster instead of the live video (mobile / reduced motion). */
+  still?: boolean;
   variant?: 'horizontal' | 'vertical';
   className?: string;
   style?: React.CSSProperties;
@@ -48,20 +51,35 @@ export function WcMask({
         </mask>
       </defs>
 
-      {/* Video revealed only through the "26" shape. */}
-      <foreignObject x={0} y={0} width={shape.w} height={shape.h} clipPath={`url(#${clipId})`}>
-        <video
-          src={videoSrc}
-          poster={posterSrc}
-          autoPlay
-          muted
-          loop
-          playsInline
-          // @ts-expect-error xmlns is valid on the HTML element inside foreignObject
-          xmlns="http://www.w3.org/1999/xhtml"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      {/* The "26" reveal. On mobile / reduced-motion we paint a STILL poster
+          (a ~30 KB image clipped to the shape) instead of decoding the 10 MB
+          looping video through the clip-path every frame — that combo is what
+          stalls phones. Desktop keeps the live video. */}
+      {still ? (
+        <image
+          href={posterSrc}
+          x={0}
+          y={0}
+          width={shape.w}
+          height={shape.h}
+          clipPath={`url(#${clipId})`}
+          preserveAspectRatio="xMidYMid slice"
         />
-      </foreignObject>
+      ) : (
+        <foreignObject x={0} y={0} width={shape.w} height={shape.h} clipPath={`url(#${clipId})`}>
+          <video
+            src={videoSrc}
+            poster={posterSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            // @ts-expect-error xmlns is valid on the HTML element inside foreignObject
+            xmlns="http://www.w3.org/1999/xhtml"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </foreignObject>
+      )}
 
       {/* White surround (everything EXCEPT the 26), fades out on scroll. */}
       {whiteOpacity > 0.01 && (

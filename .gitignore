@@ -55,3 +55,4 @@ CREDENTIALS.md
 .env
 dotnet-react/web/.env
 dotnet-react/api/appsettings.Development.json
+deploy.sh

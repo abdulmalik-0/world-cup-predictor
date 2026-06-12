@@ -67,6 +67,8 @@ export function WeAre26Background() {
           <img
             src="/trophy.png"
             alt=""
+            decoding="async"
+            fetchPriority="low"
             style={{ height: 'clamp(90px, 28vw, 320px)', objectFit: 'contain' }}
           />
           <span

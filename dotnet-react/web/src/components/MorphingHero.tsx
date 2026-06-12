@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { WcMask } from './WcMask';
 import { useWindowSize } from '../hooks/useWindowSize';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const NAV_H = 66;
 const MOBILE_BP = 768;
@@ -29,6 +30,7 @@ export function MorphingHero() {
   const { w: vw, h: vh } = useWindowSize();
   const { pathname } = useLocation();
   const isMobile = vw < MOBILE_BP;
+  const still = useReducedMotion(); // mobile or reduced-motion → still poster, no video
   const isDashboard = pathname === '/' || pathname.startsWith('/dashboard');
 
   const variant = isMobile ? 'vertical' : 'horizontal';
@@ -70,7 +72,7 @@ export function MorphingHero() {
             height: smallH,
           }}
         >
-          <WcMask whiteOpacity={0} variant={variant} />
+          <WcMask whiteOpacity={0} variant={variant} still={still} />
         </div>
       </div>
     );
@@ -100,7 +102,7 @@ export function MorphingHero() {
             y,
           }}
         >
-          <WcMask whiteOpacity={0} variant={variant} />
+          <WcMask whiteOpacity={0} variant={variant} still={still} />
         </motion.div>
       </div>
     </>
