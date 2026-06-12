@@ -57,6 +57,18 @@ export function Login() {
 
   const toggle = () => { setMode(isSignup ? 'signin' : 'signup'); setError(null); setNotice(null); };
 
+  // Google OAuth — works for both sign in and sign up (new accounts are
+  // created automatically, with the name pulled from the Google profile).
+  const google = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) setError(error.message);
+    // on success the browser redirects to Google, then back into the app.
+  };
+
   return (
     <main className="min-h-[100svh] flex items-center justify-center px-6 py-14">
       {/* Language toggle — top-left, like the reference. */}
@@ -124,8 +136,26 @@ export function Login() {
           </AnimatePresence>
         </motion.div>
 
+        {/* ── Continue with Google ── */}
+        <motion.button
+          layout
+          type="button"
+          onClick={google}
+          whileTap={{ scale: 0.98 }}
+          className="w-full mt-7 h-[50px] rounded-xl bg-white text-[#1F1F1F] font-bold text-[15px]
+                     flex items-center justify-center gap-3 hover:bg-white/90 transition"
+        >
+          <GoogleIcon /> {t('googleCta')}
+        </motion.button>
+
+        <motion.div layout className="flex items-center gap-3 my-4">
+          <span className="flex-1 h-px bg-white/12" />
+          <span className="text-[12px] text-white/40">{t('orDivider')}</span>
+          <span className="flex-1 h-px bg-white/12" />
+        </motion.div>
+
         {/* ── Fields ── */}
-        <motion.div layout className="mt-8 space-y-4">
+        <motion.div layout className="space-y-4">
           <Collapsible show={isSignup}>
             <Field icon={<UserIcon />} placeholder={t('fullNameField')} value={fullName} onChange={setFullName} autoComplete="name" />
           </Collapsible>
@@ -228,3 +258,11 @@ const MailIcon = () => (<svg {...sv}><rect x="3" y="5" width="18" height="14" rx
 const LockIcon = () => (<svg {...sv}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>);
 const EyeIcon = () => (<svg {...sv}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>);
 const EyeOffIcon = () => (<svg {...sv}><path d="M9.9 4.2A10.9 10.9 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.7 3.3M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a10.8 10.8 0 0 0 3.5-.6M3 3l18 18" /></svg>);
+const GoogleIcon = () => (
+  <svg width="19" height="19" viewBox="0 0 48 48" aria-hidden>
+    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8a12 12 0 1 1 7.9-21l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8 20-20 0-1.2-.1-2.4-.4-3.5Z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7A20 20 0 0 0 6.3 14.7Z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44Z" />
+    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C39.9 35.6 44 30.4 44 24c0-1.2-.1-2.4-.4-3.5Z" />
+  </svg>
+);

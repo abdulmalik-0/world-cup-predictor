@@ -95,6 +95,8 @@ export const STR = {
   firstTime:      { en: 'First time? Create an account', ar: 'أول مرة؟ أنشئ حساباً' },
   haveAccount:    { en: 'Have an account? Sign in', ar: 'لديك حساب؟ سجّل الدخول' },
   passwordsMismatch: { en: "Passwords don't match", ar: 'كلمتا المرور غير متطابقتين' },
+  googleCta:      { en: 'Continue with Google', ar: 'المتابعة عبر Google' },
+  orDivider:      { en: 'or',           ar: 'أو' },
   authError:      { en: 'Wrong email or password', ar: 'البريد أو كلمة المرور غير صحيحة' },
   signUpDone:     { en: 'Account created — you can sign in now.', ar: 'تم إنشاء الحساب — تقدر تسجّل الدخول الآن.' },
   signUpConfirm:  { en: 'Account created — check your email to confirm.', ar: 'تم إنشاء الحساب — تحقّق من بريدك للتأكيد.' },
