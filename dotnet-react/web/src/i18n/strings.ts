@@ -3,7 +3,7 @@ export const STR = {
   // Navbar
   matches:        { en: 'Matches',      ar: 'المباريات' },
   leaderboard:    { en: 'Leaderboard',  ar: 'الترتيب' },
-  myStats:        { en: 'My Stats',     ar: 'إحصائياتي' },
+  myStats:        { en: 'Statistics',   ar: 'احصائيات' },
   signOut:        { en: 'Sign out',     ar: 'تسجيل الخروج' },
 
   // Scoring rules

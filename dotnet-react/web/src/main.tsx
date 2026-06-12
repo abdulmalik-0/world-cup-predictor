@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
@@ -18,6 +18,14 @@ import { Toaster } from './lib/toast'
 // Set the lang attribute (dir stays LTR) before first paint.
 applyDir()
 
+// Always (re)load at the very TOP of the page. Disable the browser's scroll
+// memory so a refresh never restores a scrolled-down position (which would
+// jump past the white hero / the morph). Runs before first paint.
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual'
+}
+window.scrollTo(0, 0)
+
 const qc = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 })
@@ -27,6 +35,11 @@ function App() {
   // in place (no reload / remount), so every t() picks up the new strings live.
   useLang()
   const { session, loading } = useAuth()
+
+  // Force the top on first mount (belt-and-suspenders with scrollRestoration).
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   return (
     <BrowserRouter>
