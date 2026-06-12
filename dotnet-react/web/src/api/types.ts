@@ -41,6 +41,21 @@ export interface Player {
   department: string;
 }
 
+export interface MatchPick {
+  userId: string;
+  fullName: string;
+  department: string;
+  homeScore: number;
+  awayScore: number;
+  pointsEarned: number | null;
+}
+
+export interface MatchPicksResponse {
+  locked: boolean;
+  finished: boolean;
+  predictions: MatchPick[];
+}
+
 export interface AuthResponse {
   token: string;
   userId: string;

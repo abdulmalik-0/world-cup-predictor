@@ -41,6 +41,15 @@ export const STR = {
   doubleBadge:    { en: 'Double points 🔥',      ar: 'دبل نقاط 🔥' },
   pts:            { en: 'pts',          ar: 'نقطة' },
 
+  // Picks / colleague predictions
+  picks:          { en: 'Picks',        ar: 'التوقعات' },
+  colleaguePicks: { en: 'Employee picks',       ar: 'توقعات الموظفين' },
+  picksHidden:    { en: 'Colleague picks appear after voting closes (1 hour before kickoff).',
+                    ar: 'توقعات الزملاء تظهر بعد إغلاق نافذة التوقع (ساعة قبل البداية).' },
+  noPicksYet:     { en: 'No picks yet',         ar: 'لا توجد توقعات بعد' },
+  errLoadPicks:   { en: 'Could not load picks', ar: 'تعذّر تحميل التوقعات' },
+  youLabel:       { en: 'You',          ar: 'أنت' },
+
   // Dashboard
   upcomingMatches:{ en: 'Upcoming Matches',     ar: 'المباريات القادمة' },
   pickDayHint:    { en: 'Pick a day to filter matches, or keep “All days”.',

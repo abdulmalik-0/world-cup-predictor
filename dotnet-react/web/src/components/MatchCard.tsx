@@ -8,6 +8,7 @@ import { flagUrl, jerseyColor, isSaudi as isSaudiCode } from '../lib/teams';
 import { isPredictionOpen, untilLock, formatKickoff } from '../lib/time';
 import { useNow } from '../hooks/useNow';
 import { CountdownBox, hex } from './CountdownBox';
+import { PredictionsModal } from './PredictionsModal';
 import { t, getLang } from '../i18n';
 
 const MAX = 30;
@@ -16,6 +17,7 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   const [home, setHome] = useState(pick?.homeScore ?? 0);
   const [away, setAway] = useState(pick?.awayScore ?? 0);
   const [justSaved, setJustSaved] = useState(false);
+  const [showPicks, setShowPicks] = useState(false);
   const savedTimer = useRef<number | undefined>(undefined);
   const qc = useQueryClient();
   const now = useNow();
@@ -87,6 +89,18 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
       <div className="text-center mt-0.5 text-[12px] text-white/55 flex items-center justify-center gap-1.5">
         <span>📅</span> {formatKickoff(match.kickoffAt)}
       </div>
+
+      {/* ── See everyone's picks ── */}
+      <button
+        onClick={() => setShowPicks(true)}
+        className="mt-3 w-full py-2.5 rounded-xl font-bold text-[14px] flex items-center justify-center gap-2
+                   border transition hover:bg-white/5"
+        style={{ borderColor: hex(C.pitchGreen, 0.5), color: C.pitchGreen }}
+      >
+        <span>👥</span> {t('picks')}
+      </button>
+
+      {showPicks && <PredictionsModal match={match} onClose={() => setShowPicks(false)} />}
 
       {/* ── Save / closed ── */}
       {open ? (

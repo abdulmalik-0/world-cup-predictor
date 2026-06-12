@@ -51,7 +51,7 @@ export function WeAre26Background() {
         >
           WE ARE
         </div>
-        <div className="flex items-center justify-center" style={{ gap: 'clamp(4px,2vw,18px)' }}>
+        <div dir="ltr" className="flex items-center justify-center" style={{ gap: 'clamp(4px,2vw,18px)' }}>
           <span
             className="font-black text-white text-center leading-[0.9]"
             style={{ fontSize: 'clamp(80px, 26vw, 300px)', width: '0.7em' }}

@@ -37,9 +37,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-// ── CORS for the React dev server ─────────────────────────────────────────
+// ── CORS — allow any localhost/127.0.0.1 origin (dev convenience) ──────────
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
-    .WithOrigins("http://localhost:5173", "http://localhost:4173")
+    .SetIsOriginAllowed(origin =>
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var u)) return false;
+        return u.Host is "localhost" or "127.0.0.1";
+    })
     .AllowAnyHeader().AllowAnyMethod()));
 
 // ── ESPN sync service (background) ────────────────────────────────────────
@@ -115,6 +119,36 @@ api.MapPut("/predictions/{matchId:guid}",
     await db.SaveChangesAsync();
     return Results.Ok(pick);
 }).RequireAuthorization();
+
+// Everyone's picks for a match — REVEALED ONLY after the window closes (1 hour
+// before kickoff), so nobody can copy before voting ends. Returns { locked,
+// finished, predictions }. Before lock, predictions is empty.
+api.MapGet("/matches/{matchId:guid}/predictions", async (Guid matchId, AppDb db) =>
+{
+    var match = await db.Matches.FindAsync(matchId);
+    if (match == null) return Results.NotFound();
+
+    var locked = DateTime.UtcNow >= match.KickoffAt.AddHours(-1);
+    if (!locked)
+        return Results.Ok(new { locked = false, finished = false, predictions = Array.Empty<object>() });
+
+    var predictions = await (
+        from p in db.Predictions
+        join pr in db.Profiles on p.UserId equals pr.Id
+        where p.MatchId == matchId
+        orderby (p.PointsEarned ?? -1) descending, pr.FullName
+        select new
+        {
+            userId = p.UserId,
+            fullName = pr.FullName,
+            department = pr.Department,
+            homeScore = p.HomeScore,
+            awayScore = p.AwayScore,
+            pointsEarned = p.PointsEarned,
+        }).ToListAsync();
+
+    return Results.Ok(new { locked = true, finished = match.Status == "finished", predictions });
+});
 
 // Leaderboard — the `leaderboard` view (migration 007), via EF keyless entity.
 // Project to a plain shape (like /players) so serialization can't stall.
