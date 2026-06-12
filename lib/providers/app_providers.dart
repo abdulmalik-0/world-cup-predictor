@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:world_cup_predictor/models/leaderboard_entry.dart';
@@ -12,6 +13,15 @@ import 'package:world_cup_predictor/services/match_service.dart';
 final supabaseClientProvider = Provider<SupabaseClient>(
   (ref) => Supabase.instance.client,
 );
+
+/// Dashboard hero collapse progress: 0 = full-screen clip, 1 = fully collapsed.
+/// The dashboard updates it on scroll; the top nav bar shows the mini "26"
+/// clip in its centre as it approaches 1.
+final heroCollapseProvider = Provider<ValueNotifier<double>>((ref) {
+  final notifier = ValueNotifier<double>(0.0);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
 
 final authServiceProvider = Provider(
   (ref) => AuthService(ref.watch(supabaseClientProvider)),
@@ -35,6 +45,10 @@ final currentProfileProvider = FutureProvider<Profile?>((ref) async {
 });
 
 final upcomingMatchesProvider = FutureProvider<List<Match>>((ref) async {
+  // Re-fetch whenever auth state changes (login/logout). RLS gates this query,
+  // so if it ran before sign-in completed it would return empty and stay
+  // cached — watching auth fixes that.
+  ref.watch(authStateProvider);
   return ref.watch(matchServiceProvider).fetchUpcomingMatches();
 });
 
@@ -45,16 +59,19 @@ final matchPredictionsProvider = FutureProvider.autoDispose
 
 final myPredictionsProvider =
     FutureProvider<Map<String, Prediction>>((ref) async {
+  ref.watch(authStateProvider);
   final user = ref.watch(supabaseClientProvider).auth.currentUser;
   if (user == null) return {};
   return ref.watch(matchServiceProvider).fetchMyPredictions(user.id);
 });
 
 final leaderboardProvider = FutureProvider<List<LeaderboardEntry>>((ref) async {
+  ref.watch(authStateProvider);
   return ref.watch(leaderboardServiceProvider).fetchLeaderboard();
 });
 
 final finishedMatchesProvider = FutureProvider<List<Match>>((ref) async {
+  ref.watch(authStateProvider);
   return ref.watch(matchServiceProvider).fetchFinishedMatches();
 });
 
@@ -63,10 +80,12 @@ final isAdminProvider = Provider<bool>((ref) {
 });
 
 final allMatchesProvider = FutureProvider<List<Match>>((ref) async {
+  ref.watch(authStateProvider);
   return ref.watch(matchServiceProvider).fetchAllMatches();
 });
 
 final myStatsProvider = FutureProvider<MyStats>((ref) async {
+  ref.watch(authStateProvider);
   final user = ref.watch(supabaseClientProvider).auth.currentUser;
   if (user == null) return MyStats.empty();
   final rows =

@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
@@ -12,12 +14,34 @@ class ScoringRulesCard extends StatelessWidget {
     final body = Theme.of(context).textTheme.bodySmall;
     final bold = body?.copyWith(fontWeight: FontWeight.w700);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      color: AppTheme.primaryGreen.withValues(alpha: 0.12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Column(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.14),
+                Colors.white.withValues(alpha: 0.05),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.22),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.30),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -70,6 +94,7 @@ class ScoringRulesCard extends StatelessWidget {
               style: body,
             ),
           ],
+          ),
         ),
       ),
     );

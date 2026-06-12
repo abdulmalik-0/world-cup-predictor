@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:world_cup_predictor/core/constants/app_constants.dart';
 import 'package:world_cup_predictor/core/i18n/app_strings.dart';
 import 'package:world_cup_predictor/core/router/app_router.dart';
 import 'package:world_cup_predictor/core/theme/app_theme.dart';
@@ -16,7 +15,7 @@ class WorldCupPredictorApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
-      title: appNameAr,
+      title: 'EnterGame World Cup Arena',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

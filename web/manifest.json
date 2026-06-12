@@ -1,11 +1,11 @@
 {
-    "name": "تحدي مونديال الشركة",
-    "short_name": "مونديال الشركة",
+    "name": "EnterGame World Cup Arena",
+    "short_name": "EnterGame World Cup",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0D1B2A",
-    "theme_color": "#006847",
-    "description": "Company World Cup Predictor",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "EnterGame World Cup Arena",
     "orientation": "portrait-primary",
     "prefer_related_applications": false
 }

@@ -57,9 +57,7 @@ class _MatchPredictionsBody extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            s.ar
-                ? '${match.homeTeam} × ${match.awayTeam}'
-                : '${match.homeTeamEn} × ${match.awayTeamEn}',
+            '${match.homeTeamEn ?? match.homeTeam} × ${match.awayTeamEn ?? match.awayTeam}',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),

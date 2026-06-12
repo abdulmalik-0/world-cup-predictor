@@ -1,9 +1,16 @@
--- كأس العالم 2026 — دور المجموعات (72 مباراة)
+-- ===========================================================================
+-- كأس العالم 2026 — جميع مباريات دور المجموعات (72) + الأدوار الإقصائية
 -- التوقيت: بتوقيت السعودية (+03)
--- Generated — do not edit by hand
+-- ---------------------------------------------------------------------------
+-- 🔥 دبل النقاط (×2) على مباريات المنتخب السعودي (SA) فقط.
+--    (يُحسب تلقائياً عبر دالة is_arab_team_code — راجع migration 011)
+-- ===========================================================================
 
 TRUNCATE public.prediction_history, public.predictions, public.matches CASCADE;
 
+-- ---------------------------------------------------------------------------
+-- 1) دور المجموعات — 72 مباراة
+-- ---------------------------------------------------------------------------
 INSERT INTO public.matches (
   home_team, home_team_en, away_team, away_team_en,
   home_team_code, away_team_code, kickoff_at, status
@@ -23,7 +30,7 @@ VALUES
   ('السويد', 'Sweden', 'تونس', 'Tunisia', 'SE', 'TN', '2026-06-15 05:00:00+03', 'scheduled'),
   ('إسبانيا', 'Spain', 'الرأس الأخضر', 'Cape Verde', 'ES', 'CV', '2026-06-15 19:00:00+03', 'scheduled'),
   ('بلجيكا', 'Belgium', 'مصر', 'Egypt', 'BE', 'EG', '2026-06-15 22:00:00+03', 'scheduled'),
-  ('أوروغواي', 'Uruguay', 'السعودية', 'Saudi Arabia', 'UY', 'SA', '2026-06-16 01:00:00+03', 'scheduled'),
+  ('أوروغواي', 'Uruguay', 'السعودية', 'Saudi Arabia', 'UY', 'SA', '2026-06-16 01:00:00+03', 'scheduled'),  -- 🔥 دبل
   ('إيران', 'Iran', 'نيوزيلندا', 'New Zealand', 'IR', 'NZ', '2026-06-16 04:00:00+03', 'scheduled'),
   ('فرنسا', 'France', 'السنغال', 'Senegal', 'FR', 'SN', '2026-06-16 22:00:00+03', 'scheduled'),
   ('العراق', 'Iraq', 'النرويج', 'Norway', 'IQ', 'NO', '2026-06-17 01:00:00+03', 'scheduled'),
@@ -45,7 +52,7 @@ VALUES
   ('ألمانيا', 'Germany', 'ساحل العاج', 'Ivory Coast', 'DE', 'CI', '2026-06-20 23:00:00+03', 'scheduled'),
   ('الإكوادور', 'Ecuador', 'كوراساو', 'Curaçao', 'EC', 'CW', '2026-06-21 03:00:00+03', 'scheduled'),
   ('تونس', 'Tunisia', 'اليابان', 'Japan', 'TN', 'JP', '2026-06-21 07:00:00+03', 'scheduled'),
-  ('إسبانيا', 'Spain', 'السعودية', 'Saudi Arabia', 'ES', 'SA', '2026-06-21 19:00:00+03', 'scheduled'),
+  ('إسبانيا', 'Spain', 'السعودية', 'Saudi Arabia', 'ES', 'SA', '2026-06-21 19:00:00+03', 'scheduled'),  -- 🔥 دبل
   ('بلجيكا', 'Belgium', 'إيران', 'Iran', 'BE', 'IR', '2026-06-21 22:00:00+03', 'scheduled'),
   ('أوروغواي', 'Uruguay', 'الرأس الأخضر', 'Cape Verde', 'UY', 'CV', '2026-06-22 01:00:00+03', 'scheduled'),
   ('نيوزيلندا', 'New Zealand', 'مصر', 'Egypt', 'NZ', 'EG', '2026-06-22 04:00:00+03', 'scheduled'),
@@ -69,7 +76,7 @@ VALUES
   ('تونس', 'Tunisia', 'هولندا', 'Netherlands', 'TN', 'NL', '2026-06-25 23:00:00+03', 'scheduled'),
   ('تركيا', 'Turkey', 'الولايات المتحدة', 'USA', 'TR', 'US', '2026-06-26 03:00:00+03', 'scheduled'),
   ('باراغواي', 'Paraguay', 'أستراليا', 'Australia', 'PY', 'AU', '2026-06-26 03:00:00+03', 'scheduled'),
-  ('الرأس الأخضر', 'Cape Verde', 'السعودية', 'Saudi Arabia', 'CV', 'SA', '2026-06-26 19:00:00+03', 'scheduled'),
+  ('الرأس الأخضر', 'Cape Verde', 'السعودية', 'Saudi Arabia', 'CV', 'SA', '2026-06-26 19:00:00+03', 'scheduled'),  -- 🔥 دبل
   ('أوروغواي', 'Uruguay', 'إسبانيا', 'Spain', 'UY', 'ES', '2026-06-26 19:00:00+03', 'scheduled'),
   ('مصر', 'Egypt', 'إيران', 'Iran', 'EG', 'IR', '2026-06-26 22:00:00+03', 'scheduled'),
   ('نيوزيلندا', 'New Zealand', 'بلجيكا', 'Belgium', 'NZ', 'BE', '2026-06-26 22:00:00+03', 'scheduled'),
@@ -78,15 +85,78 @@ VALUES
   ('الجزائر', 'Algeria', 'النمسا', 'Austria', 'DZ', 'AT', '2026-06-27 04:00:00+03', 'scheduled'),
   ('كولومبيا', 'Colombia', 'البرتغال', 'Portugal', 'CO', 'PT', '2026-06-27 04:00:00+03', 'scheduled'),
   ('جمهورية الكونغو ديموقراطية', 'DR Congo', 'أوزبكستان', 'Uzbekistan', 'CD', 'UZ', '2026-06-27 04:00:00+03', 'scheduled'),
+  ('الأرجنتين', 'Argentina', 'الأردن', 'Jordan', 'AR', 'JO', '2026-06-27 04:00:00+03', 'scheduled'),
   ('كرواتيا', 'Croatia', 'غانا', 'Ghana', 'HR', 'GH', '2026-06-27 19:00:00+03', 'scheduled'),
   ('بنما', 'Panama', 'إنجلترا', 'England', 'PA', 'EN', '2026-06-27 19:00:00+03', 'scheduled');
+
+-- ---------------------------------------------------------------------------
+-- 2) الأدوار الإقصائية — الفرق تُحدَّد لاحقاً (TBD) من لوحة التحكم
+--    عند إدخال السعودية (SA) في أي مباراة، يُفعَّل الدبل تلقائياً.
+-- ---------------------------------------------------------------------------
+
+-- دور الـ32 (16 مباراة)
 INSERT INTO public.matches (
   home_team, home_team_en, away_team, away_team_en,
   home_team_code, away_team_code, kickoff_at, status
 )
 VALUES
-  ('نصف نهائي 1', 'Semi-Final 1', 'TBD', 'TBD', 'XX', 'YY', '2026-07-14 22:00:00+03', 'scheduled'),
-  ('نصف نهائي 2', 'Semi-Final 2', 'TBD', 'TBD', 'XX', 'YY', '2026-07-15 22:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 1',  'Round of 32 — M1',  'TBD', 'TBD', 'XX', 'YY', '2026-06-28 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 2',  'Round of 32 — M2',  'TBD', 'TBD', 'XX', 'YY', '2026-06-28 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 3',  'Round of 32 — M3',  'TBD', 'TBD', 'XX', 'YY', '2026-06-29 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 4',  'Round of 32 — M4',  'TBD', 'TBD', 'XX', 'YY', '2026-06-29 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 5',  'Round of 32 — M5',  'TBD', 'TBD', 'XX', 'YY', '2026-06-30 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 6',  'Round of 32 — M6',  'TBD', 'TBD', 'XX', 'YY', '2026-06-30 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 7',  'Round of 32 — M7',  'TBD', 'TBD', 'XX', 'YY', '2026-07-01 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 8',  'Round of 32 — M8',  'TBD', 'TBD', 'XX', 'YY', '2026-07-01 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 9',  'Round of 32 — M9',  'TBD', 'TBD', 'XX', 'YY', '2026-07-02 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 10', 'Round of 32 — M10', 'TBD', 'TBD', 'XX', 'YY', '2026-07-02 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 11', 'Round of 32 — M11', 'TBD', 'TBD', 'XX', 'YY', '2026-07-03 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 12', 'Round of 32 — M12', 'TBD', 'TBD', 'XX', 'YY', '2026-07-03 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 13', 'Round of 32 — M13', 'TBD', 'TBD', 'XX', 'YY', '2026-07-04 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 14', 'Round of 32 — M14', 'TBD', 'TBD', 'XX', 'YY', '2026-07-04 23:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 15', 'Round of 32 — M15', 'TBD', 'TBD', 'XX', 'YY', '2026-07-05 19:00:00+03', 'scheduled'),
+  ('دور الـ32 — مباراة 16', 'Round of 32 — M16', 'TBD', 'TBD', 'XX', 'YY', '2026-07-05 23:00:00+03', 'scheduled');
+
+-- دور الـ16
+INSERT INTO public.matches (
+  home_team, home_team_en, away_team, away_team_en,
+  home_team_code, away_team_code, kickoff_at, status
+)
+VALUES
+  ('دور الـ16 — مباراة 1', 'Round of 16 — M1', 'TBD', 'TBD', 'XX', 'YY', '2026-07-06 19:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 2', 'Round of 16 — M2', 'TBD', 'TBD', 'XX', 'YY', '2026-07-06 23:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 3', 'Round of 16 — M3', 'TBD', 'TBD', 'XX', 'YY', '2026-07-07 19:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 4', 'Round of 16 — M4', 'TBD', 'TBD', 'XX', 'YY', '2026-07-07 23:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 5', 'Round of 16 — M5', 'TBD', 'TBD', 'XX', 'YY', '2026-07-08 19:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 6', 'Round of 16 — M6', 'TBD', 'TBD', 'XX', 'YY', '2026-07-08 23:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 7', 'Round of 16 — M7', 'TBD', 'TBD', 'XX', 'YY', '2026-07-09 19:00:00+03', 'scheduled'),
+  ('دور الـ16 — مباراة 8', 'Round of 16 — M8', 'TBD', 'TBD', 'XX', 'YY', '2026-07-09 23:00:00+03', 'scheduled');
+
+-- ربع النهائي
+INSERT INTO public.matches (
+  home_team, home_team_en, away_team, away_team_en,
+  home_team_code, away_team_code, kickoff_at, status
+)
+VALUES
+  ('ربع النهائي 1', 'Quarter-Final 1', 'TBD', 'TBD', 'XX', 'YY', '2026-07-11 19:00:00+03', 'scheduled'),
+  ('ربع النهائي 2', 'Quarter-Final 2', 'TBD', 'TBD', 'XX', 'YY', '2026-07-11 23:00:00+03', 'scheduled'),
+  ('ربع النهائي 3', 'Quarter-Final 3', 'TBD', 'TBD', 'XX', 'YY', '2026-07-12 19:00:00+03', 'scheduled'),
+  ('ربع النهائي 4', 'Quarter-Final 4', 'TBD', 'TBD', 'XX', 'YY', '2026-07-12 23:00:00+03', 'scheduled');
+
+-- نصف النهائي
+INSERT INTO public.matches (
+  home_team, home_team_en, away_team, away_team_en,
+  home_team_code, away_team_code, kickoff_at, status
+)
+VALUES
+  ('نصف النهائي 1', 'Semi-Final 1', 'TBD', 'TBD', 'XX', 'YY', '2026-07-14 22:00:00+03', 'scheduled'),
+  ('نصف النهائي 2', 'Semi-Final 2', 'TBD', 'TBD', 'XX', 'YY', '2026-07-15 22:00:00+03', 'scheduled');
+
+-- تحديد المركز الثالث + النهائي
+INSERT INTO public.matches (
+  home_team, home_team_en, away_team, away_team_en,
+  home_team_code, away_team_code, kickoff_at, status
+)
+VALUES
   ('تحديد المركز الثالث', 'Third Place', 'TBD', 'TBD', 'XX', 'YY', '2026-07-18 23:00:00+03', 'scheduled'),
   ('النهائي', 'Final', 'TBD', 'TBD', 'XX', 'YY', '2026-07-19 22:00:00+03', 'scheduled');
-

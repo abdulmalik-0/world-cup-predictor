@@ -3,5 +3,5 @@ const saudiTeamCode = 'SA';
 
 const predictionLockMinutes = 60;
 
-const appNameAr = 'تحدي مونديال الشركة';
-const appNameEn = 'Company World Cup Predictor';
+const appNameAr = 'EnterGame World Cup Arena';
+const appNameEn = 'EnterGame World Cup Arena';

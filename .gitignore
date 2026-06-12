@@ -46,3 +46,6 @@ lib/core/config/supabase_config.dart
 
 # Archives / local deploy bundles
 *.zip
+
+# Supabase CLI cache
+supabase/.temp/
