@@ -1,0 +1,12 @@
+# Node / Vite
+node_modules/
+web/dist/
+.env
+
+# .NET
+bin/
+obj/
+.vs/
+
+# OS
+.DS_Store
