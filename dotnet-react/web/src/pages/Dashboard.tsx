@@ -10,6 +10,8 @@ import { DayFilterBar, type DayOption } from '../components/DayFilterBar';
 import { dayKey, dayLabel } from '../lib/time';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { NamePickerModal } from '../components/NamePickerModal';
+import { getUserId, getUserName, clearIdentity } from '../lib/identity';
 import { C } from '../lib/theme';
 import { t, getLang } from '../i18n';
 
@@ -19,10 +21,18 @@ const PAGE = 10; // matches shown initially / per "Load more"
 export function Dashboard() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [visible, setVisible] = useState(PAGE);
+  const [showNamePicker, setShowNamePicker] = useState(false);
   const still = useReducedMotion();
+  const userId = getUserId();
+  const userName = getUserName();
 
   const matchesQ = useQuery({ queryKey: ['matches'], queryFn: matchesApi.upcoming });
-  const picksQ = useQuery({ queryKey: ['picks'], queryFn: matchesApi.myPicks, retry: false });
+  const picksQ = useQuery({
+    queryKey: ['picks', userId],
+    queryFn: () => (userId ? matchesApi.myPicks(userId) : Promise.resolve([])),
+    enabled: !!userId,
+    retry: false,
+  });
 
   const matches = useMemo(
     () => [...(matchesQ.data ?? [])].sort((a, b) => +new Date(a.kickoffAt) - +new Date(b.kickoffAt)),
@@ -70,6 +80,19 @@ export function Dashboard() {
           />
         )}
 
+        {/* Identity chip — shows who predictions are saved under. */}
+        {userName && (
+          <div className="flex items-center justify-center gap-2 text-[12px] text-white/55 -mt-1">
+            <span>👤 {t('predictingAs')} <b className="text-white/85">{userName}</b></span>
+            <button
+              onClick={() => { clearIdentity(); setShowNamePicker(true); }}
+              className="underline hover:text-white"
+            >
+              {t('change')}
+            </button>
+          </div>
+        )}
+
         <ScoringRulesCard />
 
         <h2 className="flex items-center gap-2 text-2xl font-extrabold">
@@ -100,6 +123,13 @@ export function Dashboard() {
           </button>
         )}
       </div>
+
+      {showNamePicker && (
+        <NamePickerModal
+          onPicked={() => { setShowNamePicker(false); picksQ.refetch(); }}
+          onClose={() => setShowNamePicker(false)}
+        />
+      )}
     </main>
   );
 }

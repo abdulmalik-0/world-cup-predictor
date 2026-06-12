@@ -10,6 +10,9 @@ import { useNow } from '../hooks/useNow';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { CountdownBox, hex } from './CountdownBox';
 import { PredictionsModal } from './PredictionsModal';
+import { NamePickerModal } from './NamePickerModal';
+import { getUserId } from '../lib/identity';
+import { toast } from '../lib/toast';
 import { t } from '../i18n';
 
 const MAX = 30;
@@ -19,6 +22,7 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   const [away, setAway] = useState(pick?.awayScore ?? 0);
   const [justSaved, setJustSaved] = useState(false);
   const [showPicks, setShowPicks] = useState(false);
+  const [showNamePicker, setShowNamePicker] = useState(false);
   const savedTimer = useRef<number | undefined>(undefined);
   const qc = useQueryClient();
   const still = useReducedMotion();
@@ -37,14 +41,29 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
   const saudi = isSaudiCode(match.homeTeamCode) || isSaudiCode(match.awayTeamCode);
 
   const save = useMutation({
-    mutationFn: () => matchesApi.savePick(match.id, home, away),
+    mutationFn: () => {
+      const uid = getUserId();
+      if (!uid) throw new Error('no_identity');
+      return matchesApi.savePick(match.id, uid, home, away);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['picks'] });
       setJustSaved(true);
+      toast(t('savedToast'), 'success');
       window.clearTimeout(savedTimer.current);
-      savedTimer.current = window.setTimeout(() => setJustSaved(false), 1800);
+      savedTimer.current = window.setTimeout(() => setJustSaved(false), 2200);
+    },
+    onError: (e: unknown) => {
+      const raw = JSON.stringify((e as { response?: { data?: unknown } })?.response?.data ?? e);
+      toast(raw.includes('window_closed') ? t('errWindowToast') : t('errSaveToast'), 'error');
     },
   });
+
+  // Save → if we don't know who the user is yet, ask once, then save.
+  const handleSave = () => {
+    if (!getUserId()) { setShowNamePicker(true); return; }
+    save.mutate();
+  };
 
   // Team names stay English regardless of the UI language.
   const homeName = match.homeTeamEn ?? match.homeTeam;
@@ -111,9 +130,10 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
         <>
           <StatusLine justSaved={justSaved} hasPick={hasPick} dirty={dirty} />
           <button
-            onClick={() => save.mutate()}
-            disabled={!dirty || save.isPending}
-            className="mt-2.5 w-full py-3 rounded-xl font-extrabold transition disabled:cursor-not-allowed"
+            onClick={handleSave}
+            disabled={(!dirty && !justSaved) || save.isPending}
+            className="mt-2.5 w-full py-3 rounded-xl font-extrabold transition disabled:cursor-not-allowed
+                       flex items-center justify-center gap-2"
             style={
               justSaved
                 ? { background: C.pitchGreen, color: '#04130C' }
@@ -122,6 +142,7 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
                 : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
             }
           >
+            {save.isPending && <Spinner />}
             {save.isPending
               ? t('saving')
               : justSaved
@@ -136,7 +157,23 @@ export function MatchCard({ match, pick }: { match: Match; pick?: Prediction }) 
       ) : (
         <ClosedSummary match={match} pick={pick} />
       )}
+
+      {showNamePicker && (
+        <NamePickerModal
+          onPicked={() => { setShowNamePicker(false); save.mutate(); }}
+          onClose={() => setShowNamePicker(false)}
+        />
+      )}
     </motion.div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      className="inline-block w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"
+      style={{ animationDuration: '0.7s' }}
+    />
   );
 }
 

@@ -11,6 +11,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Leaderboard } from './pages/Leaderboard'
 import { MyStats } from './pages/MyStats'
 import { PastMatches } from './pages/PastMatches'
+import { Toaster } from './lib/toast'
 
 // Apply text direction (rtl for Arabic) before first paint.
 applyDir()
@@ -26,6 +27,7 @@ function App() {
       <WeAre26Background />
       <Navbar />
       <MorphingHero />
+      <Toaster />
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/past" element={<PastMatches />} />

@@ -95,17 +95,18 @@ api.MapGet("/matches/finished", async (AppDb db) =>
         .Where(m => m.Status == "finished")
         .OrderByDescending(m => m.KickoffAt).ToListAsync());
 
-// Predictions
-api.MapGet("/predictions/mine", [Authorize] async (ClaimsPrincipal user, AppDb db) =>
-{
-    var uid = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    return await db.Predictions.Where(p => p.UserId == uid).ToListAsync();
-}).RequireAuthorization();
+// Predictions — a player's own picks (identity = the profile id chosen in the
+// app's name picker). Used by the dashboard to show existing predictions.
+api.MapGet("/players/{userId:guid}/picks", async (Guid userId, AppDb db) =>
+    await db.Predictions.Where(p => p.UserId == userId).ToListAsync());
 
-api.MapPut("/predictions/{matchId:guid}",
-    [Authorize] async (Guid matchId, PickDto dto, ClaimsPrincipal user, AppDb db) =>
+// Save / update a prediction. Identity comes in the body (no password login in
+// this client). Missing scores default to 0-0 so an "empty" save never fails.
+api.MapPut("/predictions/{matchId:guid}", async (Guid matchId, PickDto dto, AppDb db) =>
 {
-    var uid = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    if (dto.UserId is not Guid uid || uid == Guid.Empty)
+        return Results.BadRequest(new { error = "no_identity" });
+
     var match = await db.Matches.FindAsync(matchId);
     if (match == null) return Results.NotFound();
 
@@ -113,18 +114,22 @@ api.MapPut("/predictions/{matchId:guid}",
     if (DateTime.UtcNow >= match.KickoffAt.AddHours(-1))
         return Results.BadRequest(new { error = "window_closed" });
 
+    // Default empty form → 0-0; clamp to a sane range.
+    var home = Math.Clamp(dto.HomeScore ?? 0, 0, 30);
+    var away = Math.Clamp(dto.AwayScore ?? 0, 0, 30);
+
     var pick = await db.Predictions.FirstOrDefaultAsync(p => p.UserId == uid && p.MatchId == matchId);
     if (pick == null)
     {
-        pick = new Prediction { Id = Guid.NewGuid(), UserId = uid, MatchId = matchId };
+        pick = new Prediction { Id = Guid.NewGuid(), UserId = uid, MatchId = matchId, CreatedAt = DateTime.UtcNow };
         db.Predictions.Add(pick);
     }
-    pick.HomeScore = dto.HomeScore;
-    pick.AwayScore = dto.AwayScore;
+    pick.HomeScore = home;
+    pick.AwayScore = away;
     pick.UpdatedAt = DateTime.UtcNow;
     await db.SaveChangesAsync();
     return Results.Ok(pick);
-}).RequireAuthorization();
+});
 
 // Everyone's picks for a match — REVEALED ONLY after the window closes (1 hour
 // before kickoff), so nobody can copy before voting ends. Returns { locked,
@@ -231,7 +236,7 @@ app.Run();
 // ─── DTOs / helpers ──────────────────────────────────────────────────────
 public record SignUpDto(string FullName, string Department);
 public record SignInDto(string FullName);
-public record PickDto(int HomeScore, int AwayScore);
+public record PickDto(Guid? UserId, int? HomeScore, int? AwayScore);
 
 public static class Tokens
 {

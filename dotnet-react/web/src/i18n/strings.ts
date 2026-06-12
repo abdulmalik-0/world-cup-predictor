@@ -71,6 +71,16 @@ export const STR = {
   theirPick:      { en: 'Pick',         ar: 'التوقع' },
   noHistory:      { en: 'No predictions yet',   ar: 'لا توجد توقعات بعد' },
 
+  // Save feedback + identity
+  savedToast:     { en: 'Prediction saved! ✓',  ar: 'تم حفظ التوقع! ✓' },
+  errWindowToast: { en: 'Voting has closed for this match', ar: 'انتهى وقت التصويت لهذه المباراة' },
+  errSaveToast:   { en: 'Could not save — please try again', ar: 'تعذّر الحفظ — حاول مجدداً' },
+  whoAreYou:      { en: 'Who are you?',         ar: 'من أنت؟' },
+  pickNameToSave: { en: 'Pick your name once to save predictions', ar: 'اختر اسمك مرة واحدة لحفظ توقعاتك' },
+  confirmName:    { en: 'Confirm',      ar: 'تأكيد' },
+  predictingAs:   { en: 'Predicting as', ar: 'تتوقّع باسم' },
+  change:         { en: 'change',       ar: 'تغيير' },
+
   // Leaderboard page
   standingsTitle: { en: 'Leaderboard',  ar: 'الترتيب' },
   standingsSub:   { en: 'Live standings — auto-updating', ar: 'الترتيب اللحظي — يتحدّث تلقائياً' },

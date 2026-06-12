@@ -5,12 +5,11 @@ import { matchesApi } from '../api/matches';
 import type { LeaderboardEntry } from '../api/types';
 import { C } from '../lib/theme';
 import { hex } from '../components/CountdownBox';
+import { getUserId, setIdentity, clearIdentity } from '../lib/identity';
 import { t } from '../i18n';
 
-const ID_KEY = 'eg.userId';
-
 export function MyStats() {
-  const [userId, setUserId] = useState<string | null>(() => localStorage.getItem(ID_KEY));
+  const [userId, setUserId] = useState<string | null>(() => getUserId());
 
   const board = useQuery({ queryKey: ['leaderboard'], queryFn: matchesApi.leaderboard });
   const rows = board.data ?? [];
@@ -18,12 +17,12 @@ export function MyStats() {
   const me = rows.find((r) => r.userId === userId) ?? null;
   const rank = me ? rows.findIndex((r) => r.userId === userId) + 1 : null;
 
-  const choose = (id: string) => {
-    localStorage.setItem(ID_KEY, id);
+  const choose = (id: string, name: string) => {
+    setIdentity(id, name);
     setUserId(id);
   };
   const reset = () => {
-    localStorage.removeItem(ID_KEY);
+    clearIdentity();
     setUserId(null);
   };
 
@@ -45,14 +44,17 @@ export function MyStats() {
   );
 }
 
-function NamePicker({ onChoose, loading }: { onChoose: (id: string) => void; loading: boolean }) {
+function NamePicker({ onChoose, loading }: { onChoose: (id: string, name: string) => void; loading: boolean }) {
   const players = useQuery({ queryKey: ['players'], queryFn: matchesApi.players });
   return (
     <div className="glass rounded-2xl p-5">
       <p className="font-bold mb-3">{t('selectName')}</p>
       <select
         defaultValue=""
-        onChange={(e) => e.target.value && onChoose(e.target.value)}
+        onChange={(e) => {
+          const p = (players.data ?? []).find((x) => x.id === e.target.value);
+          if (p) onChoose(p.id, p.fullName);
+        }}
         className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-3 text-white outline-none focus:border-emerald-400"
       >
         <option value="" disabled>

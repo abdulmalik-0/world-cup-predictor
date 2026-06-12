@@ -9,9 +9,10 @@ export const matchesApi = {
   all:         () => api.get<Match[]>('/matches').then(r => r.data),
   playerHistory: (userId: string) =>
                  api.get<UserPick[]>(`/players/${userId}/predictions`).then(r => r.data),
-  myPicks:     () => api.get<Prediction[]>('/predictions/mine').then(r => r.data),
-  savePick:    (matchId: string, home: number, away: number) =>
-                 api.put<Prediction>(`/predictions/${matchId}`, { homeScore: home, awayScore: away }).then(r => r.data),
+  myPicks:     (userId: string) =>
+                 api.get<Prediction[]>(`/players/${userId}/picks`).then(r => r.data),
+  savePick:    (matchId: string, userId: string, home: number, away: number) =>
+                 api.put<Prediction>(`/predictions/${matchId}`, { userId, homeScore: home, awayScore: away }).then(r => r.data),
   matchPicks:  (matchId: string) =>
                  api.get<MatchPicksResponse>(`/matches/${matchId}/predictions`).then(r => r.data),
   leaderboard: () => api.get<LeaderboardEntry[]>('/leaderboard').then(r => r.data),
