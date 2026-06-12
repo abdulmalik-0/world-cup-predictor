@@ -12,7 +12,7 @@ const TEAL = '#14E3B4';
 /**
  * Email + password auth — sized & styled to match the reference Flutter login
  * (entergame.altamimi.tech): 420px card, teal accent, 150px trophy with a gentle
- * float + golden shine. Sign in ⇄ Sign up animate height inside the same card.
+ * float. Sign in ⇄ Sign up animate height inside the same card.
  */
 export function Login() {
   const lang = useLang();
@@ -85,7 +85,7 @@ export function Login() {
         {/* ── Brand header (logos kept as the app's existing assets) ── */}
         <motion.div layout="position" className="flex flex-col items-center">
           <motion.div
-            className="relative shine"
+            className="relative"
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -100,7 +100,7 @@ export function Login() {
           </motion.div>
 
           <motion.div
-            className="flex flex-col items-center shine"
+            className="flex flex-col items-center"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}

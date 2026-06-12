@@ -24,24 +24,6 @@ html, body, #root {
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
-/* Golden shine sweep over the auth logos (mirrors the Flutter shimmer). The
-   mobile media query below turns this off automatically. */
-.shine { position: relative; }
-.shine::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  background: linear-gradient(105deg, transparent 38%, rgba(233,184,74,0.5) 50%, transparent 62%);
-  transform: translateX(-130%);
-  animation: shineSweep 2.6s ease-in-out 1.2s infinite;
-}
-@keyframes shineSweep {
-  0%       { transform: translateX(-130%); }
-  55%,100% { transform: translateX(130%); }
-}
-
 /* Desktop: keep transitions snappy (fast + lightweight). */
 @media (min-width: 769px) {
   * { transition-duration: 0.15s; }
