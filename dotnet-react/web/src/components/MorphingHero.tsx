@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { WcMask } from './WcMask';
+import { MobileHero } from './MobileHero';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
@@ -59,10 +60,8 @@ export function MorphingHero() {
   const boxLeft = vw / 2 - bigW / 2;
   const boxTop = bigCy - bigH / 2;
 
-  // Mobile / reduced-motion: skip the scroll-linked morph entirely (re-scaling a
-  // clip-path'd SVG every scroll frame is what stalls phones). Just park the "26"
-  // small in the navbar, exactly like the off-dashboard state.
-  if (!isDashboard || still) {
+  // Small "26" parked in the navbar centre (off-dashboard / desktop reduced-motion).
+  const parkSmall = (() => {
     const w = smallH * aspect;
     return (
       <div className="pointer-events-none fixed inset-0 z-50" aria-hidden>
@@ -79,8 +78,26 @@ export function MorphingHero() {
         </div>
       </div>
     );
+  })();
+
+  if (!isDashboard) return parkSmall;
+
+  // ── MOBILE ONLY ──────────────────────────────────────────────────────────
+  // Pinned/parallax video hero (a real <video> that autoplays on iOS), plus the
+  // small mark kept in the navbar. Desktop is left completely untouched below.
+  if (isMobile) {
+    return (
+      <>
+        <MobileHero vh={vh} />
+        {parkSmall}
+      </>
+    );
   }
 
+  // Desktop with reduced motion: no morph, just park the mark (unchanged).
+  if (still) return parkSmall;
+
+  // ── DESKTOP (unchanged) ──────────────────────────────────────────────────
   return (
     <>
       {/* Full-viewport white page that fades out as you scroll (GPU opacity). */}

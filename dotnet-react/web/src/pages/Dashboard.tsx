@@ -10,6 +10,7 @@ import { DayFilterBar, type DayOption } from '../components/DayFilterBar';
 import { dayKey, dayLabel } from '../lib/time';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { mobileHeroHeight } from '../components/MobileHero';
 import { myPicks } from '../api/predictions';
 import { C } from '../lib/theme';
 import { t, getLang } from '../i18n';
@@ -53,19 +54,32 @@ export function Dashboard() {
   const shown = filtered.slice(0, visible);
   const hasMore = filtered.length > visible;
 
-  // Spacer = morph distance, so content rises into place as the clip lands.
-  const { h: vh } = useWindowSize();
-  // Desktop: tall spacer = morph distance. Mobile/reduced-motion: no big hero
-  // (it's parked in the navbar), so just clear the fixed navbar.
-  const morph = still ? NAV_H + 16 : Math.min(Math.max((vh - NAV_H) * 0.82, 320), 760);
+  // Spacer = hero area, so content rises into place over it on scroll.
+  const { w: vw, h: vh } = useWindowSize();
+  const isMobile = vw < 768;
+  // Mobile: clear the navbar + the PINNED video hero (content then scrolls over
+  // it). Desktop: tall spacer = morph distance (unchanged). Desktop reduced-
+  // motion: just clear the navbar (unchanged).
+  const morph = isMobile
+    ? NAV_H + mobileHeroHeight(vh)
+    : still
+    ? NAV_H + 16
+    : Math.min(Math.max((vh - NAV_H) * 0.82, 320), 760);
 
   return (
     <main>
-      {/* Hero spacer — transparent so the fixed WE-ARE-26 background and the
-          morphing "26" clip show through. Content rises over it on scroll. */}
+      {/* Hero spacer — transparent so the fixed hero shows through.
+          Content rises over it on scroll. */}
       <div style={{ height: morph }} aria-hidden />
 
-      <div className="mx-auto w-full max-w-[680px] px-4 pb-20 space-y-[18px]" style={{ paddingTop: 8 }}>
+      <div
+        className="mx-auto w-full max-w-[680px] px-4 pb-20 space-y-[18px]"
+        // Mobile: opaque + above the pinned hero, so content scrolls OVER the
+        // fixed video. Desktop: untouched (no inline background / z-index).
+        style={isMobile
+          ? { paddingTop: 8, position: 'relative', zIndex: 2, background: '#050505' }
+          : { paddingTop: 8 }}
+      >
         {nextMatch && (
           <MatchCountdownBar
             kickoffIso={nextMatch.kickoffAt}
