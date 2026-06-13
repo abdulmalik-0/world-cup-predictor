@@ -56,3 +56,5 @@ CREDENTIALS.md
 dotnet-react/web/.env
 dotnet-react/api/appsettings.Development.json
 deploy.sh
+deploy-local.sh
+entergame-src.tgz
