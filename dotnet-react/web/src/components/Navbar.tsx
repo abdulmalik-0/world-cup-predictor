@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
 import { signOut } from '../lib/supabase';
 import { t, toggleLang, useLang } from '../i18n';
@@ -107,19 +108,24 @@ function LogoutButton({ className = '' }: { className?: string }) {
 
 function MobileMenu() {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // The menu is portalled out of this component, so close only when the click
+    // is outside BOTH the hamburger button and the menu panel.
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (btnRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
   return (
-    <div className="md:hidden relative shrink-0" ref={ref}>
+    <div className="md:hidden relative shrink-0" ref={btnRef}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="p-2 rounded-lg hover:bg-white/10"
@@ -135,9 +141,15 @@ function MobileMenu() {
         </svg>
       </button>
 
-      {open && (
+      {/* Portalled to the document root so it sits ABOVE the morphing hero clip
+          (z-50). Inside the navbar's own stacking context the menu would be
+          trapped below the clip, and the big "26" would cover the menu text
+          (worst on the home page). The navbar background stays z-40 (below the
+          clip) so the landed mark still shows in the navbar. */}
+      {open && createPortal(
         <div
-          className="absolute right-0 top-[calc(100%+8px)] w-52 rounded-xl overflow-hidden border border-white/15 shadow-2xl"
+          ref={menuRef}
+          className="fixed right-3 top-[72px] w-52 rounded-xl overflow-hidden border border-white/15 shadow-2xl z-[60]"
           style={{ background: '#0B1118' }}
         >
           {LINKS.map((l) => (
@@ -155,10 +167,7 @@ function MobileMenu() {
             </NavLink>
           ))}
           <button
-            onClick={() => {
-              localStorage.removeItem('eg.token');
-              location.href = '/login';
-            }}
+            onClick={() => { setOpen(false); signOut(); }}
             className="w-full text-left px-4 py-3 text-sm font-bold text-white/80 hover:bg-white/10 flex items-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -169,7 +178,8 @@ function MobileMenu() {
             </svg>
             {t('signOut')}
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
