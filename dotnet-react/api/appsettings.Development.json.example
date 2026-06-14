@@ -1,0 +1,8 @@
+{
+  "ConnectionStrings": {
+    "Postgres": "Host=aws-1-REGION.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.pwojrsmbgdtzmoqzwusy;Password=YOUR_DB_PASSWORD;SslMode=Require;Trust Server Certificate=true"
+  },
+  "Jwt": {
+    "Key": "change-me-to-a-long-random-secret"
+  }
+}

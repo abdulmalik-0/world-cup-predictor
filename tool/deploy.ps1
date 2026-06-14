@@ -73,15 +73,29 @@ if (-not (Test-Path "$imageDir/background.png")) {
 }
 Write-Host "    Images OK: background, wc26_logo, fifa logo" -ForegroundColor DarkGray
 
-Invoke-Checked "Prepare remote folders" {
-    ssh $Server "rm -rf ${RemotePath}/site; mkdir -p ${RemotePath}/site"
+$archive = Join-Path $Root "build/web.tgz"
+if (Test-Path $archive) { Remove-Item $archive -Force }
+
+Invoke-Checked "Pack build/web" {
+    tar -czf $archive -C build/web .
+}
+
+$archiveSize = (Get-Item $archive).Length
+Write-Host "    Archive size: $archiveSize bytes" -ForegroundColor DarkGray
+
+Invoke-Checked "Prepare remote folder" {
+    ssh $Server "mkdir -p ${RemotePath}"
 }
 Invoke-Checked "Upload nginx config" {
     scp tool/nginx-spa.conf "${Server}:${RemotePath}/nginx-spa.conf"
 }
-Invoke-Checked "Upload build/web" {
-    scp -r build/web/. "${Server}:${RemotePath}/site/"
+Invoke-Checked "Upload build archive" {
+    scp -C $archive "${Server}:${RemotePath}/web.tgz"
 }
+Invoke-Checked "Extract on server" {
+    ssh $Server "rm -rf ${RemotePath}/site; mkdir -p ${RemotePath}/site && tar -xzf ${RemotePath}/web.tgz -C ${RemotePath}/site && rm -f ${RemotePath}/web.tgz"
+}
+if (Test-Path $archive) { Remove-Item $archive -Force }
 
 # One SSH session: permissions + verify + docker (fewer password prompts / drops)
 $finalizeCmd = @(
@@ -89,7 +103,9 @@ $finalizeCmd = @(
     "chmod -R a+rX ${RemotePath}/site",
     "test -f ${RemotePath}/site/index.html",
     "test -f ${RemotePath}/site/assets/assets/images/background.png",
-    "docker rm -f worldcup_predictor_app 2>/dev/null || true",
+    "cd ${RemotePath} 2>/dev/null && docker compose --env-file .env.docker down 2>/dev/null || true",
+    "docker rm -f worldcup_predictor_app worldcup_predictor_api 2>/dev/null || true",
+    "for port in 8086; do for id in `$(docker ps -q --filter publish=`$port); do docker rm -f `$id 2>/dev/null || true; done; done",
     "docker run -d --name worldcup_predictor_app --restart always -p 8086:80 -v ${RemotePath}/site:/usr/share/nginx/html:ro -v ${RemotePath}/nginx-spa.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine",
     "echo '--- container ---'",
     "docker ps --filter name=worldcup_predictor_app",

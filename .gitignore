@@ -42,6 +42,10 @@ app.*.map.json
 .env.docker
 supabase/.env
 env.json
+secrets.local.json
+.env.docker
+build/web.tgz
+build/dotnet-api/
 lib/core/config/supabase_config.dart
 
 # Archives / local deploy bundles

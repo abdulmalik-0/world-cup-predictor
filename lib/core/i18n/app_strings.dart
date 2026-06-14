@@ -25,7 +25,7 @@ class S {
   String _p(String arText, String enText) => ar ? arText : enText;
 
   // ── Shell / general ─────────────────────────────────────────
-  String get appName => _p('Malaz World Cup Arena', 'Malaz World Cup Arena');
+  String get appName => _p('الملز World Cup Arena', 'Malaz World Cup Arena');
   String get matches => _p('المباريات', 'Matches');
   String get standings => _p('الترتيب', 'Leaderboard');
   String get myStats => _p('إحصائياتي', 'My Stats');
